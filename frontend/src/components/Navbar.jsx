@@ -66,16 +66,16 @@ export default function Navbar({ currentUser, onSelectRole, onLogout, onOpenChan
               </h1>
               <span className="badge badge-emerald" style={{ fontSize: '0.6rem', padding: '2px 7px' }}>Cloud SaaS</span>
               {/* Backend status indicator */}
-              <span title={backendOnline ? 'Backend API connected' : 'Offline mode (client simulation)'} style={{
+              <span title={backendOnline ? 'Backend API connected' : 'Offline mode (IndexedDB Sync Enabled)'} style={{
                 display: 'inline-flex', alignItems: 'center', gap: '4px',
-                fontSize: '0.65rem', color: backendOnline ? '#10b981' : '#6b7280',
+                fontSize: '0.65rem', color: backendOnline ? '#10b981' : '#f59e0b',
                 fontWeight: 600
               }}>
                 {backendOnline
                   ? <Wifi size={11} color="#10b981" />
-                  : <WifiOff size={11} color="#6b7280" />}
+                  : <WifiOff size={11} color="#f59e0b" />}
                 <span style={{ display: window.innerWidth < 1100 ? 'none' : 'inline' }}>
-                  {backendOnline ? 'API Live' : 'Offline'}
+                  {backendOnline ? 'API Live' : 'Offline (Sync Active)'}
                 </span>
               </span>
             </div>

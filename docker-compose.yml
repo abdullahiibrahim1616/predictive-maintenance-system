@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: predmaint-db
+    environment:
+      POSTGRES_DB: predictive_maintenance
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  # Main Predictive Maintenance Node.js Backend API
+  backend-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: predmaint-backend
+    environment:
+      PORT: 5000
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres-db:5432/predictive_maintenance
+      JWT_SECRET: super-secret-ncdmb-key-2026
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres-db
+    restart: always
+
+  # Main React Frontend Application
+  frontend-app:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: predmaint-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend-api
+    restart: always
+
+  # RBAC Governance Backend Service
+  rbac-backend:
+    build:
+      context: ./rbac-admin-dashboard/backend
+      dockerfile: Dockerfile
+    container_name: rbac-admin-backend
+    ports:
+      - "5001:5001"
+    restart: always
+
+  # RBAC Governance Admin Frontend Portal
+  rbac-frontend:
+    build:
+      context: ./rbac-admin-dashboard/frontend
+      dockerfile: Dockerfile
+    container_name: rbac-admin-frontend
+    ports:
+      - "3001:80"
+    depends_on:
+      - rbac-backend
+    restart: always
+
+volumes:
+  postgres_data:
