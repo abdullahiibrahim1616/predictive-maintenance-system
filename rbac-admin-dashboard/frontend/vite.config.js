@@ -7,9 +7,10 @@ export default defineConfig({
     host: true,
     port: 5180,
     strictPort: true,
+    allowedHosts: true, // Allow external public tunnel hosts
     proxy: {
       '/api': {
-        target: 'http://localhost:4000',
+        target: 'http://localhost:5001',
         changeOrigin: true,
       },
     },

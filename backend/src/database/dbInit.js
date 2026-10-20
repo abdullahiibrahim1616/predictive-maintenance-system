@@ -180,6 +180,32 @@ async function initDatabase() {
 
         for (const [roleId, permKeys] of Object.entries(rolePermMap)) {
             for (const key of permKeys) {
+                await run(`INSERT OR IGNORE INTO role_permissions (role_id, permission_key) VALUES (?, ?)`, [roleId, key]);
+            }
+        }
+    }
+
+    // Ensure the live RBAC permission matrix is complete even when the SQLite DB already exists.
+    const rolePermMap = {
+        'SUPER_ADMIN': ['telemetry.view', 'telemetry.ingest', 'workorders.create', 'workorders.edit', 'workorders.complete', 'reports.view', 'reports.export', 'audit.view', 'users.manage', 'roles.manage', 'kms.rotate'],
+        'MAINTENANCE_MANAGER': ['telemetry.view', 'telemetry.ingest', 'workorders.create', 'workorders.edit', 'workorders.complete', 'reports.view'],
+        'OPERATIONS_MANAGER': ['telemetry.view', 'reports.view', 'reports.export'],
+        'TECHNICIAN': ['telemetry.view', 'workorders.complete']
+    };
+
+    for (const [roleId, permKeys] of Object.entries(rolePermMap)) {
+        const existing = await query(`SELECT permission_key FROM role_permissions WHERE role_id = ?`, [roleId]);
+        const desiredSet = new Set(permKeys);
+        const existingSet = new Set(existing.map(row => row.permission_key));
+
+        for (const key of existingSet) {
+            if (!desiredSet.has(key)) {
+                await run(`DELETE FROM role_permissions WHERE role_id = ? AND permission_key = ?`, [roleId, key]);
+            }
+        }
+
+        for (const key of permKeys) {
+            if (!existingSet.has(key)) {
                 await run(`INSERT INTO role_permissions (role_id, permission_key) VALUES (?, ?)`, [roleId, key]);
             }
         }
