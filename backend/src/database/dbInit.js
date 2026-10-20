@@ -1,8 +1,10 @@
 const { run, get, query } = require('../config/db');
 const bcrypt = require('bcryptjs');
+const { runMigrations } = require('./migrator');
 
 async function initDatabase() {
     console.log('🔄 Initializing Database Tables & Seed Data...');
+    await runMigrations();
 
     // 1. Create Tables
     await run(`

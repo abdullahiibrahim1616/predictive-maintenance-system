@@ -1,7 +1,7 @@
 const { verifyToken } = require('../config/jwt');
-const { query } = require('../config/db');
+const { query, get } = require('../config/db');
 
-function authenticateToken(req, res, next) {
+async function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
@@ -12,6 +12,21 @@ function authenticateToken(req, res, next) {
     const decoded = verifyToken(token);
     if (!decoded) {
         return res.status(403).json({ success: false, error: 'Invalid or expired session token.' });
+    }
+
+    // Verify token_version against current database state for instant revocation
+    if (decoded.token_version !== undefined) {
+        try {
+            const user = await get(`SELECT id, token_version FROM users WHERE id = ?`, [decoded.id]);
+            if (!user || user.token_version !== decoded.token_version) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Session has expired or was revoked. Please log in again.'
+                });
+            }
+        } catch (dbErr) {
+            console.error('Token version check error:', dbErr);
+        }
     }
 
     req.user = decoded;
@@ -76,7 +91,7 @@ function requirePermission(...requiredPermissions) {
 }
 
 /**
- * Stage 1 Enhancement: Facility Scope Guard (BOLA Mitigation)
+ * Facility Scope Guard (BOLA Mitigation)
  * Ensures non-SuperAdmins can only operate within their assigned plant facility.
  */
 function requireFacilityAccess(facilityIdParam = 'facility_id') {
@@ -107,4 +122,3 @@ module.exports = {
     requirePermission,
     requireFacilityAccess
 };
-

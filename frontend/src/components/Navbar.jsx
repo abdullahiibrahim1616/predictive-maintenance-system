@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Activity, BarChart3, Wrench, Key, Database, Cpu, Wifi, WifiOff, LogOut, Bell, Mail, MessageSquare, CheckCircle2 } from 'lucide-react';
 
-export default function Navbar({ currentUser, onSelectRole, onLogout, activeTab, setActiveTab, backendOnline, notifications = [] }) {
+export default function Navbar({ currentUser, onSelectRole, onLogout, onOpenChangePassword, activeTab, setActiveTab, backendOnline, notifications = [] }) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
 
   const roleBadges = {
@@ -119,36 +119,39 @@ export default function Navbar({ currentUser, onSelectRole, onLogout, activeTab,
 
         {/* User Profile + Notification Bell + Role Switcher */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-          {/* Demo Role Switcher */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '4px',
-            background: 'rgba(255,255,255,0.04)', padding: '4px 8px',
-            borderRadius: '8px', border: '1px solid rgba(255,255,255,0.07)'
-          }}>
-            <span style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: 600, marginRight: '2px' }}>Role:</span>
-            {[
-              { role: 'SUPER_ADMIN', short: 'Admin', color: '#f43f5e' },
-              { role: 'MAINTENANCE_MANAGER', short: 'Maint', color: '#f59e0b' },
-              { role: 'OPERATIONS_MANAGER', short: 'Ops', color: '#10b981' },
-              { role: 'TECHNICIAN', short: 'Tech', color: '#06b6d4' }
-            ].map(r => (
-              <button
-                key={r.role}
-                id={`role-${r.role.toLowerCase()}`}
-                onClick={() => onSelectRole(r.role)}
-                style={{
-                  padding: '3px 9px', borderRadius: '5px', border: 'none',
-                  fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer',
-                  background: currentUser?.role === r.role ? `${r.color}25` : 'transparent',
-                  color: currentUser?.role === r.role ? r.color : '#6b7280',
-                  transition: 'all 0.15s ease',
-                  outline: currentUser?.role === r.role ? `1px solid ${r.color}40` : 'none'
-                }}
-              >
-                {r.short}
-              </button>
-            ))}
-          </div>
+          {/* Demo Role Switcher (Super Admin Demo Only) */}
+          {currentUser?.role === 'SUPER_ADMIN' && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              background: 'rgba(255,255,255,0.04)', padding: '4px 8px',
+              borderRadius: '8px', border: '1px solid rgba(255,255,255,0.07)'
+            }}>
+              <span style={{ fontSize: '0.65rem', color: '#f59e0b', fontWeight: 700, marginRight: '2px' }}>DEMO:</span>
+              {[
+                { role: 'SUPER_ADMIN', short: 'Admin', color: '#f43f5e' },
+                { role: 'MAINTENANCE_MANAGER', short: 'Maint', color: '#f59e0b' },
+                { role: 'OPERATIONS_MANAGER', short: 'Ops', color: '#10b981' },
+                { role: 'TECHNICIAN', short: 'Tech', color: '#06b6d4' }
+              ].map(r => (
+                <button
+                  key={r.role}
+                  id={`role-${r.role.toLowerCase()}`}
+                  onClick={() => onSelectRole(r.role)}
+                  title={`Simulate switching to ${r.short}`}
+                  style={{
+                    padding: '3px 9px', borderRadius: '5px', border: 'none',
+                    fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer',
+                    background: currentUser?.role === r.role ? `${r.color}25` : 'transparent',
+                    color: currentUser?.role === r.role ? r.color : '#6b7280',
+                    transition: 'all 0.15s ease',
+                    outline: currentUser?.role === r.role ? `1px solid ${r.color}40` : 'none'
+                  }}
+                >
+                  {r.short}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Notification Bell Icon */}
           <div style={{ position: 'relative' }}>
@@ -245,6 +248,16 @@ export default function Navbar({ currentUser, onSelectRole, onLogout, activeTab,
             }}>
               {(currentUser?.full_name || 'E').charAt(0)}
             </div>
+
+            <button
+              id="btn-change-password"
+              onClick={onOpenChangePassword}
+              className="btn btn-secondary"
+              title="Change Password"
+              style={{ padding: '7px 10px', borderRadius: '8px', gap: '0' }}
+            >
+              <Key size={15} color="#9ca3af" />
+            </button>
 
             <button
               id="btn-logout"

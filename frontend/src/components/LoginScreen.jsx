@@ -53,7 +53,13 @@ export default function LoginScreen({ onLogin }) {
     setLoginError('');
 
     const cleanEmail = (targetEmail || email || '').trim().toLowerCase();
-    const pass = targetPassword || password || 'password123';
+    const pass = targetPassword !== undefined ? targetPassword : password;
+
+    if (!cleanEmail || !pass) {
+      setLoginError('Please enter both corporate email and password.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch('/api/v1/auth/login', {
@@ -62,32 +68,20 @@ export default function LoginScreen({ onLogin }) {
         body: JSON.stringify({ email: cleanEmail, password: pass })
       });
       const data = await res.json();
-      if (data.success && data.token) {
+      if (res.ok && data.success && data.token) {
         localStorage.setItem('auth_token', data.token);
         onLogin(data.user, data.token);
         setIsLoading(false);
         return;
+      } else {
+        setLoginError(data.error || 'Authentication failed. Invalid email address or password.');
       }
     } catch (err) {
-      console.warn('Backend login request failed, falling back to local user state:', err);
+      console.error('Backend login request error:', err);
+      setLoginError('Cannot connect to authentication server. Please check your connection or backend status.');
+    } finally {
+      setIsLoading(false);
     }
-
-    const roleMap = {
-      'admin@seplatenergy.com': { id: 'usr-admin', full_name: 'Engr. Chukwuemeka Obi', role: 'SUPER_ADMIN', facility_id: 'fac-1' },
-      'maint.mgr@seplatenergy.com': { id: 'usr-maint', full_name: 'Dr. Fatima Aliyu', role: 'MAINTENANCE_MANAGER', facility_id: 'fac-2' },
-      'ops.mgr@seplatenergy.com': { id: 'usr-ops', full_name: 'Chief Dayo Adeyemi', role: 'OPERATIONS_MANAGER', facility_id: 'fac-1' },
-      'tech.field@seplatenergy.com': { id: 'usr-tech', full_name: 'Emeka Okafor (Field Tech)', role: 'TECHNICIAN', facility_id: 'fac-2' }
-    };
-    let user = roleMap[cleanEmail];
-    if (!user) {
-      if (cleanEmail.includes('admin')) user = roleMap['admin@seplatenergy.com'];
-      else if (cleanEmail.includes('maint')) user = roleMap['maint.mgr@seplatenergy.com'];
-      else if (cleanEmail.includes('ops')) user = roleMap['ops.mgr@seplatenergy.com'];
-      else user = roleMap['tech.field@seplatenergy.com'];
-    }
-
-    onLogin({ ...user, email: cleanEmail || user.email }, null);
-    setIsLoading(false);
   };
 
   const handleQuickLogin = (account) => {

@@ -6,9 +6,13 @@ import MaintenanceManagerView from './components/MaintenanceManagerView';
 import OperationsManagerView from './components/OperationsManagerView';
 import TechnicianView from './components/TechnicianView';
 import TelemetrySimulatorModal from './components/TelemetrySimulatorModal';
+import ChangePasswordModal from './components/ChangePasswordModal';
+
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(null); // null = render LoginScreen on startup
+  const [currentUser, setCurrentUser] = useState(null);
   const [authToken, setAuthToken] = useState(localStorage.getItem('auth_token') || null);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
   const [backendOnline, setBackendOnline] = useState(false);
@@ -99,6 +103,41 @@ export default function App() {
     return token ? { 'Authorization': `Bearer ${token}` } : {};
   };
 
+  // Restore authenticated session via /api/v1/auth/me on initial app load
+  useEffect(() => {
+    const restoreSession = async () => {
+      const storedToken = localStorage.getItem('auth_token');
+      if (!storedToken) {
+        setIsInitializing(false);
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/v1/auth/me', {
+          headers: { 'Authorization': `Bearer ${storedToken}` }
+        });
+        const data = await res.json();
+        if (res.ok && data.success && data.user) {
+          setCurrentUser(data.user);
+          setAuthToken(storedToken);
+          setBackendOnline(true);
+        } else {
+          // Stored token is invalid or expired
+          console.warn('Session restoration failed:', data.error);
+          localStorage.removeItem('auth_token');
+          setAuthToken(null);
+          setCurrentUser(null);
+        }
+      } catch (err) {
+        console.warn('Backend offline during session validation:', err);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    restoreSession();
+  }, []);
+
   // Try to load live data from backend on mount or user/token update
   useEffect(() => {
     const syncFromBackend = async () => {
@@ -180,31 +219,43 @@ export default function App() {
     setActiveTab('dashboard');
   };
 
-  // Role Switching Handler
+  // Logout handler
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    setAuthToken(null);
+    setCurrentUser(null);
+    setActiveTab('dashboard');
+    setNotifications([]);
+  };
+
+  // Demo Role Switching Handler (Super Admin only, strictly via server authentication)
   const handleSelectRole = async (role) => {
     const roleProfiles = {
-      SUPER_ADMIN: { id: 'usr-admin', full_name: 'Engr. Chukwuemeka Obi', email: 'admin@seplatenergy.com', role: 'SUPER_ADMIN', facility_id: 'fac-1' },
-      MAINTENANCE_MANAGER: { id: 'usr-maint', full_name: 'Dr. Fatima Aliyu', email: 'maint.mgr@seplatenergy.com', role: 'MAINTENANCE_MANAGER', facility_id: 'fac-2' },
-      OPERATIONS_MANAGER: { id: 'usr-ops', full_name: 'Chief Dayo Adeyemi', email: 'ops.mgr@seplatenergy.com', role: 'OPERATIONS_MANAGER', facility_id: 'fac-1' },
-      TECHNICIAN: { id: 'usr-tech', full_name: 'Emeka Okafor (Field Tech)', email: 'tech.field@seplatenergy.com', role: 'TECHNICIAN', facility_id: 'fac-2' }
+      SUPER_ADMIN: { email: 'admin@seplatenergy.com', password: 'password123' },
+      MAINTENANCE_MANAGER: { email: 'maint.mgr@seplatenergy.com', password: 'password123' },
+      OPERATIONS_MANAGER: { email: 'ops.mgr@seplatenergy.com', password: 'password123' },
+      TECHNICIAN: { email: 'tech.field@seplatenergy.com', password: 'password123' }
     };
-    const targetUser = roleProfiles[role];
+    const target = roleProfiles[role];
+    if (!target) return;
+
     try {
       const res = await fetch('/api/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: targetUser.email, password: 'password123' })
+        body: JSON.stringify({ email: target.email, password: target.password })
       });
       const data = await res.json();
-      if (data.success && data.token) {
+      if (res.ok && data.success && data.token) {
         setAuthToken(data.token);
         localStorage.setItem('auth_token', data.token);
         setCurrentUser(data.user);
-        return;
+      } else {
+        alert(`Failed to switch role to ${role}: ${data.error || 'Server rejected credentials.'}`);
       }
-    } catch (_) {}
-
-    setCurrentUser(targetUser);
+    } catch (err) {
+      alert(`Cannot switch role: Backend server unreachable.`);
+    }
   };
 
   // Telemetry Ingestion Handler
@@ -354,6 +405,26 @@ export default function App() {
     }));
   };
 
+  // Show loading screen while validating session
+  if (isInitializing) {
+    return (
+      <div style={{
+        minHeight: '100vh', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', background: '#090d16',
+        color: '#f3f4f6', fontFamily: "'Outfit', sans-serif"
+      }}>
+        <div style={{
+          width: '44px', height: '44px', border: '3px solid rgba(16,185,129,0.2)',
+          borderTop: '3px solid #10b981', borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite', marginBottom: '16px'
+        }} />
+        <div style={{ fontSize: '1rem', fontWeight: 600 }}>Validating Secure Session...</div>
+        <div style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: '4px' }}>Seplat Energy Asset Reliability Platform</div>
+        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
   // Show login screen if not logged in
   if (!currentUser) {
     return <LoginScreen onLogin={handleLogin} />;
@@ -364,7 +435,8 @@ export default function App() {
       <Navbar
         currentUser={currentUser}
         onSelectRole={handleSelectRole}
-        onLogout={() => setCurrentUser(null)}
+        onLogout={handleLogout}
+        onOpenChangePassword={() => setIsChangePasswordOpen(true)}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         backendOnline={backendOnline}
@@ -478,6 +550,17 @@ export default function App() {
           equipmentList={equipmentList}
           onIngestTelemetry={handleIngestTelemetry}
           onClose={() => setIsSimulatorOpen(false)}
+        />
+      )}
+
+      {/* Change Password Modal */}
+      {isChangePasswordOpen && (
+        <ChangePasswordModal
+          authToken={authToken}
+          onPasswordChanged={(newToken) => {
+            setAuthToken(newToken);
+          }}
+          onClose={() => setIsChangePasswordOpen(false)}
         />
       )}
 
