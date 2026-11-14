@@ -3,6 +3,8 @@ const { analyzeTelemetry } = require('../services/predictiveEngine');
 const { calculateCostAvoidance } = require('../services/costCalculator');
 const { logAudit } = require('../middleware/auditMiddleware');
 const notificationService = require('../services/notificationService');
+const awsIntegrations = require('../services/awsIntegrations');
+const { randomUUID } = require('crypto');
 
 async function ingestTelemetry(req, res) {
     try {
@@ -31,7 +33,7 @@ async function ingestTelemetry(req, res) {
             flow_rate_bpd: parseFloat(flow_rate_bpd || 0)
         });
 
-        const logId = 'log-' + Date.now();
+        const logId = `log-${randomUUID()}`;
         await run(`
             INSERT INTO telemetry_logs (id, equipment_id, vibration_rms_mms, temperature_c, pressure_psi, flow_rate_bpd, health_index, anomaly_flag, failure_prediction)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -57,6 +59,7 @@ async function ingestTelemetry(req, res) {
 
         let autoWorkOrderCreated = null;
         let notificationsDispatched = [];
+        let associatedWorkOrderId = null;
 
         // Auto-generate Work Order & Cost Avoidance Estimate if Anomaly Detected or Health < 65%
         if (analysis.healthIndex < 65.0) {
@@ -64,6 +67,7 @@ async function ingestTelemetry(req, res) {
             const existingWO = await get(`SELECT id FROM work_orders WHERE equipment_id = ? AND status IN ('OPEN', 'IN_PROGRESS')`, [equipment_id]);
 
             let woId = existingWO ? existingWO.id : 'wo-auto-' + Date.now();
+            associatedWorkOrderId = woId;
             const priority = analysis.healthIndex < 45 ? 'CRITICAL' : 'HIGH';
 
             if (!existingWO) {
@@ -96,7 +100,7 @@ async function ingestTelemetry(req, res) {
 
             // Dispatch Real-Time SMS & Email Notifications
             const smsRes = await notificationService.sendSMSAlert({
-                phone: '+234-803-555-0192',
+                phone: process.env.AWS_SNS_SMS_PHONE,
                 name: 'Emeka Okafor (Field Tech)',
                 tag: equipment.tag_name,
                 facility: equipment.facility_name,
@@ -105,7 +109,7 @@ async function ingestTelemetry(req, res) {
             });
 
             const emailRes = await notificationService.sendEmailAlert({
-                to: 'maint.mgr@seplatenergy.com',
+                to: process.env.MAINTENANCE_ALERT_EMAIL,
                 name: 'Dr. Fatima Aliyu (Maint Mgr)',
                 tag: equipment.tag_name,
                 facility: equipment.facility_name,
@@ -115,6 +119,36 @@ async function ingestTelemetry(req, res) {
             });
 
             notificationsDispatched = [smsRes, emailRes];
+        }
+
+        let archive;
+        try {
+            archive = await awsIntegrations.archiveTelemetry({
+                id: logId,
+                timestamp: new Date().toISOString(),
+                equipment_id,
+                equipment_tag: equipment.tag_name,
+                facility: equipment.facility_name,
+                measurements: {
+                    vibration_rms_mms,
+                    temperature_c,
+                    pressure_psi: pressure_psi || 0,
+                    flow_rate_bpd: flow_rate_bpd || 0
+                },
+                analysis: {
+                    health_index: analysis.healthIndex,
+                    anomaly_flag: Boolean(analysis.anomalyFlag),
+                    failure_prediction: analysis.failurePrediction,
+                    estimated_rul_hours: analysis.estimatedRulHours
+                },
+                work_order_id: associatedWorkOrderId
+            });
+        } catch (err) {
+            console.error('Telemetry was saved to the database but S3 archival failed:', err);
+            archive = {
+                status: 'FAILED',
+                error: 'Telemetry was saved to the database but could not be archived to S3.'
+            };
         }
 
         return res.status(201).json({
@@ -128,7 +162,9 @@ async function ingestTelemetry(req, res) {
                 estimated_rul_hours: analysis.estimatedRulHours,
                 new_status: newStatus
             },
-            autoWorkOrderCreated
+            autoWorkOrderCreated,
+            notificationsDispatched,
+            archive
         });
 
     } catch (err) {

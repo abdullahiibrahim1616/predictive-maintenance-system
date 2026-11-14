@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const notificationController = require('../controllers/notificationController');
+const { authenticateToken, requirePermission, requireRoles } = require('../middleware/authMiddleware');
 
-// Public GET & POST for capstone demo
-router.get('/', notificationController.getNotifications);
-router.post('/test', notificationController.triggerTestNotification);
+router.get('/', authenticateToken, requirePermission('telemetry.view'), notificationController.getNotifications);
+router.post('/test', authenticateToken, requireRoles('SUPER_ADMIN'), notificationController.triggerTestNotification);
 
 module.exports = router;

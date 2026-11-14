@@ -76,9 +76,10 @@ async function runMigrations() {
             if (file.endsWith('.sql')) {
                 const sqlContent = fs.readFileSync(filePath, 'utf8');
                 const statements = sqlContent
+                    .replace(/^\s*--.*$/gm, '')
                     .split(';')
                     .map(s => s.trim())
-                    .filter(s => s.length > 0 && !s.startsWith('--'));
+                    .filter(s => s.length > 0);
 
                 for (const stmt of statements) {
                     await run(stmt);

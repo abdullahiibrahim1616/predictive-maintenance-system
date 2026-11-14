@@ -23,7 +23,7 @@ async function triggerTestNotification(req, res) {
                 healthIndex: 45.0,
                 workOrderId: 'wo-test-101'
             });
-        } else {
+        } else if (channel === 'EMAIL') {
             result = await notificationService.sendEmailAlert({
                 to: contact || 'maint.mgr@seplatenergy.com',
                 name: recipient_name || 'Dr. Fatima Aliyu',
@@ -33,9 +33,11 @@ async function triggerTestNotification(req, res) {
                 healthIndex: 42.0,
                 workOrderId: 'wo-test-102'
             });
+        } else {
+            return res.status(400).json({ success: false, error: 'Channel must be SMS or EMAIL.' });
         }
 
-        return res.status(201).json({ success: true, result });
+        return res.status(result.success ? 201 : 502).json({ success: result.success, result });
     } catch (err) {
         return res.status(500).json({ success: false, error: 'Failed to dispatch test notification.' });
     }

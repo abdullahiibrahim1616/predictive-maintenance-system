@@ -58,7 +58,7 @@ function Topbar() {
 function AppLayout() {
   const { user, loading } = useAuth();
   if (loading) return null;
-  if (!user) return null;
+  if (!user) return <Navigate to="/login" replace />;
   return (
     <div className="app-layout">
       <Sidebar />

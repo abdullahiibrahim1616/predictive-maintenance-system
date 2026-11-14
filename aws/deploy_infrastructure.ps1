@@ -13,12 +13,24 @@ Write-Host "====================================================================
 # 1. Create KMS Key for NCDMB Regulatory Data Encryption at Rest
 Write-Host "🔐 1. Creating AWS KMS Customer Managed Encryption Key..." -ForegroundColor Yellow
 $KMS_KEY_ID = & aws kms create-key --region $REGION --description "NCDMB Data Encryption Key" --query "KeyMetadata.KeyId" --output text
+& aws kms enable-key-rotation --key-id $KMS_KEY_ID --region $REGION
 & aws kms create-alias --alias-name "alias/ncdmb-pred-maint-$RANDOM_SUFFIX" --target-key-id $KMS_KEY_ID --region $REGION
 Write-Host "✅ KMS Key Created: $KMS_KEY_ID" -ForegroundColor Green
 
 # 2. Create S3 Bucket for Raw Telemetry Audit Logs
 Write-Host "📦 2. Provisioning Encrypted Amazon S3 Telemetry Bucket..." -ForegroundColor Yellow
 & aws s3api create-bucket --bucket $S3_BUCKET --region $REGION
+$ENCRYPTION_CONFIG = @{
+    Rules = @(
+        @{
+            ApplyServerSideEncryptionByDefault = @{
+                SSEAlgorithm = "aws:kms"
+                KMSMasterKeyID = $KMS_KEY_ID
+            }
+        }
+    )
+} | ConvertTo-Json -Depth 5 -Compress
+& aws s3api put-bucket-encryption --bucket $S3_BUCKET --server-side-encryption-configuration $ENCRYPTION_CONFIG --region $REGION
 Write-Host "✅ Amazon S3 Bucket Provisioned: s3://$S3_BUCKET" -ForegroundColor Green
 
 # 3. Create SNS Topic for Critical Maintenance Alerts
@@ -33,4 +45,5 @@ Write-Host "Region: $REGION"
 Write-Host "KMS Key ID: $KMS_KEY_ID"
 Write-Host "Telemetry Bucket: s3://$S3_BUCKET"
 Write-Host "SNS Alert Topic ARN: $SNS_ARN"
+Write-Host "Configure the application with AWS_REGION=$REGION, AWS_S3_BUCKET=$S3_BUCKET, AWS_SNS_TOPIC_ARN=$SNS_ARN, AWS_KMS_KEY_ID=$KMS_KEY_ID"
 Write-Host "========================================================================" -ForegroundColor Cyan

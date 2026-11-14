@@ -9,6 +9,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || '127.0.0.1';
 
 // Security Middleware
 app.use(helmet({
@@ -51,6 +52,7 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const roleRoutes = require('./routes/roleRoutes');
+const securityRoutes = require('./routes/securityRoutes');
 
 // Register API Routes
 app.use('/api/v1/auth', authRoutes);
@@ -61,6 +63,7 @@ app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/audit-logs', auditRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/roles', roleRoutes);
+app.use('/api/v1/security', securityRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
@@ -75,7 +78,7 @@ app.use((err, req, res, next) => {
 // Boot Database & Start Express Server
 if (require.main === module) {
     initDatabase().then(() => {
-        app.listen(PORT, () => {
+        app.listen(PORT, HOST, () => {
             console.log(`🚀 Predictive Maintenance Backend API listening on port ${PORT}`);
             console.log(`📡 Health Check URL: http://localhost:${PORT}/api/v1/health`);
         });

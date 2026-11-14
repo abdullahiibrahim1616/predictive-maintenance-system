@@ -92,6 +92,13 @@ async function runTests() {
             }, { refreshToken });
             assert(refreshRes.status === 200 && refreshRes.body.token, 'Refresh token generates new access token');
 
+            // TEST 6B: Refresh token cannot be used as an access token
+            const refreshUsedAsAccess = await makeRequest({
+                hostname: 'localhost', port: 5099, path: '/api/v1/auth/me', method: 'GET',
+                headers: { 'Authorization': `Bearer ${refreshToken}` }
+            });
+            assert(refreshUsedAsAccess.status === 403, 'Refresh token rejected when used against protected route');
+
             // TEST 7: Change Password Complexity Enforcement
             const weakChange = await makeRequest({
                 hostname: 'localhost', port: 5099, path: '/api/v1/auth/change-password', method: 'PATCH',

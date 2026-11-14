@@ -1,13 +1,23 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-    console.error('❌ FATAL: JWT_SECRET environment variable is not configured. Server cannot start securely.');
+let JWT_SECRET = process.env.JWT_SECRET;
+if (process.env.JWT_SECRET_FILE) {
+    try {
+        JWT_SECRET = fs.readFileSync(process.env.JWT_SECRET_FILE, 'utf8').trim();
+    } catch (err) {
+        console.error(`❌ FATAL: Could not read JWT_SECRET_FILE: ${err.message}`);
+        process.exit(1);
+    }
+}
+
+if (!JWT_SECRET || Buffer.byteLength(JWT_SECRET, 'utf8') < 32) {
+    console.error('❌ FATAL: Configure a JWT secret with at least 32 bytes. Server cannot start securely.');
     process.exit(1);
 }
 
@@ -22,7 +32,8 @@ function generateToken(user) {
             role: user.role,
             facility_id: user.facility_id,
             full_name: user.full_name,
-            token_version: user.token_version || 1
+            token_version: user.token_version || 1,
+            type: 'access'
         },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN }

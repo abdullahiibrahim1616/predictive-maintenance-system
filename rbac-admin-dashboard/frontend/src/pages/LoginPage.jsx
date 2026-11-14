@@ -2,14 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const DEMO_ROLES = [
-  { label: 'Super Admin', email: 'super@rbac.dev',   color: '#ef4444', icon: '👑', desc: 'Full system access' },
-  { label: 'Admin',       email: 'admin@rbac.dev',   color: '#f59e0b', icon: '🔧', desc: 'User management' },
-  { label: 'Manager',     email: 'manager@rbac.dev', color: '#6366f1', icon: '📋', desc: 'Team oversight' },
-  { label: 'Staff',       email: 'staff@rbac.dev',   color: '#10b981', icon: '💼', desc: 'Assigned modules' },
-  { label: 'Viewer',      email: 'viewer@rbac.dev',  color: '#64748b', icon: '👁️', desc: 'Read-only access' },
-];
-
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -29,20 +21,6 @@ export default function LoginPage() {
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const quickLogin = async (demoEmail) => {
-    setEmail(demoEmail);
-    setPassword('Admin@123');
-    setError('');
-    setLoading(true);
-    try {
-      await login(demoEmail, 'Admin@123');
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.message);
       setLoading(false);
     }
   };
@@ -137,38 +115,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Demo Quick-Login */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-            <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Quick Demo Logins</span>
-            <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-          </div>
-          <div style={{ display: 'grid', grid: 'auto / 1fr 1fr', gap: '8px' }}>
-            {DEMO_ROLES.map(r => (
-              <button
-                key={r.email} onClick={() => quickLogin(r.email)} disabled={loading}
-                style={{
-                  background: `${r.color}11`, border: `1px solid ${r.color}33`,
-                  borderRadius: 'var(--radius-sm)', padding: '10px 12px',
-                  cursor: 'pointer', textAlign: 'left', transition: 'all 0.18s',
-                  display: 'flex', flexDirection: 'column', gap: '2px',
-                }}
-                onMouseOver={e => { e.currentTarget.style.background = `${r.color}22`; e.currentTarget.style.borderColor = `${r.color}66`; }}
-                onMouseOut={e => { e.currentTarget.style.background = `${r.color}11`; e.currentTarget.style.borderColor = `${r.color}33`; }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '0.9rem' }}>{r.icon}</span>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: r.color }}>{r.label}</span>
-                </div>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{r.desc}</span>
-              </button>
-            ))}
-          </div>
-          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '12px' }}>
-            All demo accounts use password: <strong style={{ color: 'var(--text-secondary)' }}>Admin@123</strong>
-          </p>
-        </div>
       </div>
     </div>
   );

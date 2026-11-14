@@ -14,6 +14,13 @@ async function authenticateToken(req, res, next) {
         return res.status(403).json({ success: false, error: 'Invalid or expired session token.' });
     }
 
+    if (decoded.type !== 'access') {
+        return res.status(403).json({
+            success: false,
+            error: 'Invalid token type. Use an access token when calling protected endpoints.'
+        });
+    }
+
     // Verify token_version against current database state for instant revocation
     if (decoded.token_version !== undefined) {
         try {

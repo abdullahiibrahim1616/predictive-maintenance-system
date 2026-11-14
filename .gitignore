@@ -1,7 +1,11 @@
 node_modules/
 .env
+.env.*
+!.env.example
+.secrets/
 *.log
 dist/
 build/
 backend/backups/
 backups/
+rbac-admin-dashboard/backend/*.db.json

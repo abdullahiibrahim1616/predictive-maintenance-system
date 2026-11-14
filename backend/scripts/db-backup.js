@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const dbFile = path.resolve(process.env.DB_FILE || path.join(__dirname, '../predictive_maint.db'));
-const backupDir = path.resolve(__dirname, '../backups');
+const backupDir = path.resolve(process.env.DB_BACKUP_DIR || path.join(__dirname, '../backups'));
 const MAX_BACKUPS = 10;
 
 function createBackup() {

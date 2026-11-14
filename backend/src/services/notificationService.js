@@ -1,4 +1,6 @@
 const { run, query } = require('../config/db');
+const { randomUUID } = require('crypto');
+const awsIntegrations = require('./awsIntegrations');
 
 // Ensure notifications table exists
 async function initNotificationTable() {
@@ -12,7 +14,7 @@ async function initNotificationTable() {
             subject TEXT NOT NULL,
             message_body TEXT NOT NULL,
             status TEXT DEFAULT 'DELIVERED',
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     `);
 }
@@ -21,48 +23,90 @@ async function initNotificationTable() {
 initNotificationTable().catch(err => console.error('Failed to init notifications table:', err));
 
 /**
- * Dispatch automated SMS notification (AWS SNS Simulation)
+ * Send a configured SMS through AWS SNS, or record a local simulation.
  */
 async function sendSMSAlert({ phone, name, tag, facility, healthIndex, workOrderId }) {
-    const id = 'sms-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+    const id = `sms-${randomUUID()}`;
     const subject = `[SEPLAT CRITICAL SMS ALERT] ${tag}`;
     const message_body = `SEPLAT ALERT: Critical health (${healthIndex}%) detected on ${tag} at ${facility}. Failure Risk: Urgent. Work Order #${workOrderId || 'AUTO'} generated. Technician ${name} dispatched.`;
     const contact = phone || '+234-803-555-0192';
 
     try {
+        const delivery = await awsIntegrations.publishSms(message_body);
+        const recipientContact = delivery.destination || contact;
         await run(`
             INSERT INTO notifications (id, recipient_name, recipient_contact, channel, equipment_tag, subject, message_body, status)
-            VALUES (?, ?, ?, 'SMS', ?, ?, ?, 'DELIVERED')
-        `, [id, name, contact, tag, subject, message_body]);
+            VALUES (?, ?, ?, 'SMS', ?, ?, ?, ?)
+        `, [id, name, recipientContact, tag, subject, message_body, delivery.status]);
 
-        console.log(`📱 [AWS SNS SMS SIMULATION] Sent to ${name} (${contact}): "${message_body}"`);
-        return { success: true, id, channel: 'SMS', contact, subject, message_body };
+        console.log(`[${delivery.status}] SMS alert for ${name} (${recipientContact})`);
+        return {
+            success: true,
+            id,
+            channel: 'SMS',
+            contact: recipientContact,
+            subject,
+            message_body,
+            status: delivery.status,
+            simulated: Boolean(delivery.simulated),
+            messageId: delivery.messageId
+        };
     } catch (err) {
         console.error('SMS notification error:', err);
-        return { success: false, error: err.message };
+        await recordFailedNotification({
+            id, name, contact, tag, subject, message_body, channel: 'SMS'
+        });
+        return { success: false, id, channel: 'SMS', status: 'FAILED', error: err.message };
     }
 }
 
 /**
- * Dispatch automated Email notification (AWS SES / SendGrid Simulation)
+ * Publish email alerts to the configured SNS topic, or record a local simulation.
  */
 async function sendEmailAlert({ to, name, tag, facility, failureMode, healthIndex, workOrderId }) {
-    const id = 'email-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+    const id = `email-${randomUUID()}`;
     const subject = `⚠️ SEPLAT PREDICTIVE ALERT: ${tag} (${facility}) Health Index Critical (${healthIndex}%)`;
     const message_body = `Dear ${name},\n\nAutomated sensor telemetry at ${facility} has detected a critical anomaly on Asset Tag: ${tag}.\n\n- Current Health Index: ${healthIndex}%\n- Predicted Failure Mode: ${failureMode}\n- Action Required: Immediate Inspection\n- Work Order Reference: ${workOrderId || 'N/A'}\n\nPlease access the Seplat Energy Predictive Maintenance Portal to track repair progress.\n\nRegards,\nSeplat Energy Asset Integrity Systems`;
     const contact = to || 'maint.mgr@seplatenergy.com';
 
     try {
+        const delivery = await awsIntegrations.publishAlertTopic({ subject, message: message_body });
+        const recipientContact = delivery.destination || contact;
+        const recipientName = delivery.destination ? 'AWS SNS alert subscribers' : name;
         await run(`
             INSERT INTO notifications (id, recipient_name, recipient_contact, channel, equipment_tag, subject, message_body, status)
-            VALUES (?, ?, ?, 'EMAIL', ?, ?, ?, 'DELIVERED')
-        `, [id, name, contact, tag, subject, message_body]);
+            VALUES (?, ?, ?, 'EMAIL', ?, ?, ?, ?)
+        `, [id, recipientName, recipientContact, tag, subject, message_body, delivery.status]);
 
-        console.log(`✉️ [AWS SES EMAIL SIMULATION] Sent to ${name} (${contact}): Subject: "${subject}"`);
-        return { success: true, id, channel: 'EMAIL', contact, subject, message_body };
+        console.log(`[${delivery.status}] Email alert for ${recipientName} (${recipientContact})`);
+        return {
+            success: true,
+            id,
+            channel: 'EMAIL',
+            contact: recipientContact,
+            subject,
+            message_body,
+            status: delivery.status,
+            simulated: Boolean(delivery.simulated),
+            messageId: delivery.messageId
+        };
     } catch (err) {
         console.error('Email notification error:', err);
-        return { success: false, error: err.message };
+        await recordFailedNotification({
+            id, name, contact, tag, subject, message_body, channel: 'EMAIL'
+        });
+        return { success: false, id, channel: 'EMAIL', status: 'FAILED', error: err.message };
+    }
+}
+
+async function recordFailedNotification({ id, name, contact, tag, subject, message_body, channel }) {
+    try {
+        await run(`
+            INSERT INTO notifications (id, recipient_name, recipient_contact, channel, equipment_tag, subject, message_body, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'FAILED')
+        `, [id, name, contact, channel, tag, subject, message_body]);
+    } catch (err) {
+        console.error('Failed to persist notification failure:', err);
     }
 }
 
@@ -70,17 +114,11 @@ async function sendEmailAlert({ to, name, tag, facility, failureMode, healthInde
  * List recent notification logs
  */
 async function listNotifications(limit = 50) {
-    try {
-        const notifications = await query(`
-            SELECT * FROM notifications
-            ORDER BY timestamp DESC
-            LIMIT ?
-        `, [limit]);
-        return notifications;
-    } catch (err) {
-        console.error('List notifications error:', err);
-        return [];
-    }
+    return query(`
+        SELECT * FROM notifications
+        ORDER BY timestamp DESC
+        LIMIT ?
+    `, [limit]);
 }
 
 module.exports = {

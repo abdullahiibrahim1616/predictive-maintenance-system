@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const dotenv = require('dotenv');
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -58,8 +59,36 @@ if (DB_TYPE === 'sqlite') {
     }
 
     const { Pool } = pg;
+    const readSecret = (fileEnv, valueEnv) => {
+        const secretFile = process.env[fileEnv];
+        if (secretFile) {
+            try {
+                return fs.readFileSync(secretFile, 'utf8').trim();
+            } catch (err) {
+                throw new Error(`❌ [Database] Could not read secret file configured by ${fileEnv}: ${err.message}`);
+            }
+        }
+        return process.env[valueEnv];
+    };
+
+    const databasePassword = readSecret('DB_PASSWORD_FILE', 'DB_PASSWORD');
+    const poolConfig = process.env.DATABASE_URL
+        ? { connectionString: process.env.DATABASE_URL }
+        : {
+            host: process.env.DB_HOST,
+            port: Number(process.env.DB_PORT || 5432),
+            database: process.env.DB_NAME,
+            user: process.env.DB_USER,
+            password: databasePassword
+        };
+
+    if (!process.env.DATABASE_URL &&
+        (!poolConfig.host || !poolConfig.database || !poolConfig.user || !poolConfig.password)) {
+        throw new Error('❌ [Database] PostgreSQL requires DATABASE_URL or DB_HOST, DB_NAME, DB_USER, and DB_PASSWORD_FILE/DB_PASSWORD.');
+    }
+
     const pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
+        ...poolConfig,
         ssl: process.env.NODE_ENV === 'production' && process.env.DB_SSL !== 'false'
             ? { rejectUnauthorized: false }
             : false
@@ -69,7 +98,7 @@ if (DB_TYPE === 'sqlite') {
         console.error('❌ [Database] Unexpected error on idle PostgreSQL client:', err);
     });
 
-    console.log('✅ [Database] PostgreSQL pool initialized for:', process.env.DATABASE_URL ? 'configured connection string' : 'default credentials');
+    console.log('✅ [Database] PostgreSQL pool initialized.');
 
     // Convert SQLite style ? placeholders to Postgres $1, $2, ...
     const convertPlaceholders = (sql) => {

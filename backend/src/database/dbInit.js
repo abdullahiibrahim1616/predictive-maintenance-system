@@ -1,5 +1,6 @@
 const { run, get, query } = require('../config/db');
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
 const { runMigrations } = require('./migrator');
 
 async function initDatabase() {
@@ -13,7 +14,7 @@ async function initDatabase() {
             name TEXT NOT NULL,
             region TEXT NOT NULL,
             facility_type TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     `);
 
@@ -27,7 +28,7 @@ async function initDatabase() {
             criticality_rating TEXT DEFAULT 'HIGH',
             status TEXT DEFAULT 'OPERATIONAL',
             health_index REAL DEFAULT 100.0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (facility_id) REFERENCES facilities(id) ON DELETE CASCADE
         )
     `);
@@ -40,7 +41,7 @@ async function initDatabase() {
             password_hash TEXT NOT NULL,
             role TEXT NOT NULL,
             facility_id TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (facility_id) REFERENCES facilities(id) ON DELETE SET NULL
         )
     `);
@@ -49,7 +50,7 @@ async function initDatabase() {
         CREATE TABLE IF NOT EXISTS telemetry_logs (
             id TEXT PRIMARY KEY,
             equipment_id TEXT NOT NULL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             vibration_rms_mms REAL NOT NULL,
             temperature_c REAL NOT NULL,
             pressure_psi REAL NOT NULL,
@@ -72,8 +73,8 @@ async function initDatabase() {
             status TEXT DEFAULT 'OPEN',
             predicted_failure_mode TEXT,
             estimated_rul_hours REAL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            completed_at DATETIME,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            completed_at TIMESTAMP,
             FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE CASCADE,
             FOREIGN KEY (assigned_to_user_id) REFERENCES users(id) ON DELETE SET NULL
         )
@@ -87,7 +88,7 @@ async function initDatabase() {
             production_loss_rate_usd_per_hr REAL NOT NULL,
             estimated_repair_cost_usd REAL NOT NULL,
             net_savings_usd REAL NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (work_order_id) REFERENCES work_orders(id) ON DELETE CASCADE
         )
     `);
@@ -102,7 +103,7 @@ async function initDatabase() {
             target_entity TEXT NOT NULL,
             ip_address TEXT,
             metadata TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     `);
 
@@ -114,7 +115,7 @@ async function initDatabase() {
             description TEXT,
             badge_class TEXT DEFAULT 'badge-cyan',
             is_system INTEGER DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     `);
 
@@ -138,11 +139,11 @@ async function initDatabase() {
 
     // Check and Seed RBAC Roles & Permissions
     const roleCount = await get(`SELECT COUNT(*) as count FROM roles`);
-    if (!roleCount || roleCount.count === 0) {
+    if (!roleCount || Number(roleCount.count) === 0) {
         console.log('🌱 Seeding RBAC Roles & Permission Matrix...');
         
         const defaultRoles = [
-            { id: 'SUPER_ADMIN', name: 'Super Admin', desc: 'Global system governance, security policies, KMS master key rotation, unrestricted user & role management.', badge: 'badge-rose' },
+            { id: 'SUPER_ADMIN', name: 'Super Admin', desc: 'Global system governance, security policies, KMS automatic key rotation, unrestricted user & role management.', badge: 'badge-rose' },
             { id: 'MAINTENANCE_MANAGER', name: 'Maintenance Manager', desc: 'Equipment health monitoring, predictive work order creation, technician task assignment, vibration alert threshold tuning.', badge: 'badge-amber' },
             { id: 'OPERATIONS_MANAGER', name: 'Operations Manager', desc: 'Cost avoidance analytics, executive fleet reliability metrics, production downtime loss calculations.', badge: 'badge-emerald' },
             { id: 'TECHNICIAN', name: 'Field Technician', desc: 'Field execution of assigned maintenance work orders, repair log submission, vibration sensor validation.', badge: 'badge-cyan' }
@@ -163,7 +164,7 @@ async function initDatabase() {
             { key: 'audit.view', name: 'Access ISO 27001 Audit Trail', category: 'Governance & Security' },
             { key: 'users.manage', name: 'Provision & Suspend User Accounts', category: 'Governance & Security' },
             { key: 'roles.manage', name: 'Modify RBAC Role Matrix', category: 'Governance & Security' },
-            { key: 'kms.rotate', name: 'Rotate AWS KMS Encryption Keys', category: 'Governance & Security' }
+            { key: 'kms.rotate', name: 'Enable AWS KMS Automatic Key Rotation', category: 'Governance & Security' }
         ];
 
         for (const p of defaultPerms) {
@@ -180,9 +181,13 @@ async function initDatabase() {
 
         for (const [roleId, permKeys] of Object.entries(rolePermMap)) {
             for (const key of permKeys) {
-                await run(`INSERT OR IGNORE INTO role_permissions (role_id, permission_key) VALUES (?, ?)`, [roleId, key]);
+                await run(
+                    `INSERT INTO role_permissions (role_id, permission_key) VALUES (?, ?) ON CONFLICT (role_id, permission_key) DO NOTHING`,
+                    [roleId, key]
+                );
             }
         }
+
     }
 
     // Ensure the live RBAC permission matrix is complete even when the SQLite DB already exists.
@@ -204,6 +209,11 @@ async function initDatabase() {
             }
         }
 
+        await run(
+            `UPDATE permissions SET name = ? WHERE key = ?`,
+            ['Enable AWS KMS Automatic Key Rotation', 'kms.rotate']
+        );
+
         for (const key of permKeys) {
             if (!existingSet.has(key)) {
                 await run(`INSERT INTO role_permissions (role_id, permission_key) VALUES (?, ?)`, [roleId, key]);
@@ -215,6 +225,46 @@ async function initDatabase() {
     const userCount = await get(`SELECT COUNT(*) as count FROM users`);
     if (userCount && userCount.count > 0) {
         console.log('✅ Database already populated with seed data.');
+        return;
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+        const adminEmail = process.env.BOOTSTRAP_ADMIN_EMAIL;
+        const adminPasswordFile = process.env.BOOTSTRAP_ADMIN_PASSWORD_FILE;
+        if (!adminEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail.trim())) {
+            throw new Error('A valid BOOTSTRAP_ADMIN_EMAIL is required to initialize the production database.');
+        }
+        if (!adminPasswordFile) {
+            throw new Error('BOOTSTRAP_ADMIN_PASSWORD_FILE is required to initialize the production database.');
+        }
+
+        let adminPassword;
+        try {
+            adminPassword = fs.readFileSync(adminPasswordFile, 'utf8').trim();
+        } catch (err) {
+            throw new Error(`Could not read BOOTSTRAP_ADMIN_PASSWORD_FILE: ${err.message}`);
+        }
+        if (adminPassword.length < 12) {
+            throw new Error('The production bootstrap administrator password must contain at least 12 characters.');
+        }
+
+        const facilityId = 'fac-bootstrap';
+        await run(
+            `INSERT INTO facilities (id, name, region, facility_type) VALUES (?, ?, ?, ?)`,
+            [facilityId, process.env.BOOTSTRAP_ADMIN_FACILITY_NAME || 'Primary Facility', 'Unassigned', 'Operations Facility']
+        );
+        await run(
+            `INSERT INTO users (id, full_name, email, password_hash, role, facility_id) VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+                'usr-bootstrap-admin',
+                process.env.BOOTSTRAP_ADMIN_NAME || 'System Administrator',
+                adminEmail.trim().toLowerCase(),
+                await bcrypt.hash(adminPassword, 10),
+                'SUPER_ADMIN',
+                facilityId
+            ]
+        );
+        console.log('✅ Production bootstrap administrator created.');
         return;
     }
 

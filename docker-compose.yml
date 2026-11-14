@@ -1,70 +1,139 @@
-version: '3.8'
-
 services:
-  # PostgreSQL Database Service
   postgres-db:
     image: postgres:15-alpine
-    container_name: predmaint-db
     environment:
-      POSTGRES_DB: predictive_maintenance
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespassword
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${POSTGRES_DB:-predictive_maintenance}
+      POSTGRES_USER: ${POSTGRES_USER:-predmaint}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
 
-  # Main Predictive Maintenance Node.js Backend API
   backend-api:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: predmaint-backend
     environment:
       PORT: 5000
+      HOST: 0.0.0.0
       NODE_ENV: production
-      DATABASE_URL: postgresql://postgres:postgrespassword@postgres-db:5432/predictive_maintenance
-      JWT_SECRET: super-secret-ncdmb-key-2026
-    ports:
-      - "5000:5000"
+      DB_TYPE: postgres
+      DB_HOST: postgres-db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-predictive_maintenance}
+      DB_USER: ${POSTGRES_USER:-predmaint}
+      DB_PASSWORD_FILE: /run/secrets/postgres_password
+      DB_SSL: "false"
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      AWS_REGION: ${AWS_REGION:-}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-}
+      AWS_S3_PREFIX: ${AWS_S3_PREFIX:-telemetry}
+      AWS_SNS_ENABLED: ${AWS_SNS_ENABLED:-false}
+      AWS_SNS_TOPIC_ARN: ${AWS_SNS_TOPIC_ARN:-}
+      AWS_SNS_SMS_PHONE: ${AWS_SNS_SMS_PHONE:-}
+      AWS_KMS_KEY_ID: ${AWS_KMS_KEY_ID:-}
+      MAINTENANCE_ALERT_EMAIL: ${MAINTENANCE_ALERT_EMAIL:-}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:?Set BOOTSTRAP_ADMIN_EMAIL in .env}
+      BOOTSTRAP_ADMIN_PASSWORD_FILE: /run/secrets/bootstrap_admin_password
+      CORS_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
+    secrets:
+      - postgres_password
+      - jwt_secret
+      - bootstrap_admin_password
     depends_on:
-      - postgres-db
-    restart: always
+      postgres-db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://127.0.0.1:5000/api/v1/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
 
-  # Main React Frontend Application
   frontend-app:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: predmaint-frontend
     ports:
-      - "3000:80"
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-3000}:80"
     depends_on:
-      - backend-api
-    restart: always
+      backend-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
-  # RBAC Governance Backend Service
   rbac-backend:
     build:
       context: ./rbac-admin-dashboard/backend
       dockerfile: Dockerfile
-    container_name: rbac-admin-backend
-    ports:
-      - "5001:5001"
-    restart: always
+    environment:
+      PORT: 5001
+      HOST: 0.0.0.0
+      NODE_ENV: production
+      JWT_SECRET_FILE: /run/secrets/rbac_jwt_secret
+      BOOTSTRAP_ADMIN_EMAIL: ${RBAC_BOOTSTRAP_ADMIN_EMAIL:?Set RBAC_BOOTSTRAP_ADMIN_EMAIL in .env}
+      BOOTSTRAP_ADMIN_PASSWORD_FILE: /run/secrets/rbac_bootstrap_password
+      DB_PATH: /data/rbac.db.json
+      CORS_ORIGIN: ${RBAC_APP_ORIGIN:-http://localhost:3001}
+    secrets:
+      - rbac_jwt_secret
+      - rbac_bootstrap_password
+    volumes:
+      - rbac_data:/data
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://127.0.0.1:5001/api/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
-  # RBAC Governance Admin Frontend Portal
   rbac-frontend:
     build:
       context: ./rbac-admin-dashboard/frontend
       dockerfile: Dockerfile
-    container_name: rbac-admin-frontend
     ports:
-      - "3001:80"
+      - "${RBAC_APP_BIND_ADDRESS:-127.0.0.1}:${RBAC_APP_PORT:-3001}:80"
     depends_on:
-      - rbac-backend
-    restart: always
+      rbac-backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+secrets:
+  postgres_password:
+    file: ${POSTGRES_PASSWORD_FILE:-.secrets/postgres_password}
+  jwt_secret:
+    file: ${JWT_SECRET_FILE:-.secrets/jwt_secret}
+  rbac_jwt_secret:
+    file: ${RBAC_JWT_SECRET_FILE:-.secrets/rbac_jwt_secret}
+  rbac_bootstrap_password:
+    file: ${RBAC_BOOTSTRAP_PASSWORD_FILE:-.secrets/rbac_bootstrap_password}
+  bootstrap_admin_password:
+    file: ${BOOTSTRAP_ADMIN_PASSWORD_FILE:-.secrets/bootstrap_admin_password}
 
 volumes:
   postgres_data:
+  rbac_data:

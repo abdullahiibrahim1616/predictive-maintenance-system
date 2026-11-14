@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS facilities (
     name TEXT NOT NULL,
     region TEXT NOT NULL,
     facility_type TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS equipment (
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS equipment (
     criticality_rating TEXT DEFAULT 'HIGH',
     status TEXT DEFAULT 'OPERATIONAL',
     health_index REAL DEFAULT 100.0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (facility_id) REFERENCES facilities(id) ON DELETE CASCADE
 );
 
@@ -28,14 +28,14 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL,
     facility_id TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (facility_id) REFERENCES facilities(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS telemetry_logs (
     id TEXT PRIMARY KEY,
     equipment_id TEXT NOT NULL,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     vibration_rms_mms REAL NOT NULL,
     temperature_c REAL NOT NULL,
     pressure_psi REAL NOT NULL,
@@ -56,8 +56,8 @@ CREATE TABLE IF NOT EXISTS work_orders (
     status TEXT DEFAULT 'OPEN',
     predicted_failure_mode TEXT,
     estimated_rul_hours REAL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    completed_at DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP,
     FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE CASCADE,
     FOREIGN KEY (assigned_to_user_id) REFERENCES users(id) ON DELETE SET NULL
 );
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS cost_avoidance_reports (
     production_loss_rate_usd_per_hr REAL NOT NULL,
     estimated_repair_cost_usd REAL NOT NULL,
     net_savings_usd REAL NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (work_order_id) REFERENCES work_orders(id) ON DELETE CASCADE
 );
 
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     target_entity TEXT NOT NULL,
     ip_address TEXT,
     metadata TEXT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS roles (
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS roles (
     description TEXT,
     badge_class TEXT DEFAULT 'badge-cyan',
     is_system INTEGER DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS permissions (
@@ -117,5 +117,5 @@ CREATE TABLE IF NOT EXISTS notifications (
     subject TEXT NOT NULL,
     message_body TEXT NOT NULL,
     status TEXT DEFAULT 'DELIVERED',
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

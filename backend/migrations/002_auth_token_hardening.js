@@ -31,8 +31,8 @@ module.exports = {
                 id TEXT PRIMARY KEY,
                 user_id TEXT NOT NULL,
                 token_hash TEXT NOT NULL,
-                expires_at DATETIME NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                expires_at TIMESTAMP NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         `);

@@ -1,6 +1,7 @@
 const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 require('dotenv').config();
@@ -65,19 +66,39 @@ if (db.get('roles').size().value() === 0) {
   }
   db.set('role_permissions', rolePermsArr).write();
 
-  const password = bcrypt.hashSync('Admin@123', 10);
+  const bootstrapEmail = process.env.BOOTSTRAP_ADMIN_EMAIL;
+  const bootstrapPasswordFile = process.env.BOOTSTRAP_ADMIN_PASSWORD_FILE;
+  if (!bootstrapEmail || !bootstrapPasswordFile) {
+    throw new Error('BOOTSTRAP_ADMIN_EMAIL and BOOTSTRAP_ADMIN_PASSWORD_FILE are required when initializing the RBAC database.');
+  }
+
+  let bootstrapPassword;
+  try {
+    bootstrapPassword = fs.readFileSync(bootstrapPasswordFile, 'utf8').trim();
+  } catch (err) {
+    throw new Error(`Could not read BOOTSTRAP_ADMIN_PASSWORD_FILE: ${err.message}`);
+  }
+  if (bootstrapPassword.length < 12) {
+    throw new Error('The RBAC bootstrap administrator password must contain at least 12 characters.');
+  }
+
   const users = [
-    { id: 'usr-001', full_name: 'Alice Superstar', email: 'super@rbac.dev',   password_hash: password, role_id: 'role-superadmin', department: 'IT Security',  avatar_color: '#ef4444', status: 'ACTIVE', created_at: new Date().toISOString(), created_by: null, last_login: null },
-    { id: 'usr-002', full_name: 'Bob Anderson',    email: 'admin@rbac.dev',   password_hash: password, role_id: 'role-admin',      department: 'Operations',   avatar_color: '#f59e0b', status: 'ACTIVE', created_at: new Date().toISOString(), created_by: 'usr-001', last_login: null },
-    { id: 'usr-003', full_name: 'Carol Martinez',  email: 'manager@rbac.dev', password_hash: password, role_id: 'role-manager',    department: 'Engineering',  avatar_color: '#6366f1', status: 'ACTIVE', created_at: new Date().toISOString(), created_by: 'usr-001', last_login: null },
-    { id: 'usr-004', full_name: 'Dave Johnson',    email: 'staff@rbac.dev',   password_hash: password, role_id: 'role-staff',      department: 'Engineering',  avatar_color: '#10b981', status: 'ACTIVE', created_at: new Date().toISOString(), created_by: 'usr-002', last_login: null },
-    { id: 'usr-005', full_name: 'Eve Williams',    email: 'viewer@rbac.dev',  password_hash: password, role_id: 'role-viewer',     department: 'Finance',      avatar_color: '#64748b', status: 'ACTIVE', created_at: new Date().toISOString(), created_by: 'usr-002', last_login: null },
-    { id: 'usr-006', full_name: 'Frank Thompson',  email: 'custom@rbac.dev',  password_hash: password, role_id: 'role-staff',      department: 'Marketing',    avatar_color: '#8b5cf6', status: 'ACTIVE', created_at: new Date().toISOString(), created_by: 'usr-001', last_login: null },
+    {
+      id: uuidv4(),
+      full_name: process.env.BOOTSTRAP_ADMIN_NAME || 'System Administrator',
+      email: bootstrapEmail.trim().toLowerCase(),
+      password_hash: bcrypt.hashSync(bootstrapPassword, 10),
+      role_id: 'role-superadmin',
+      department: 'Administration',
+      avatar_color: '#ef4444',
+      status: 'ACTIVE',
+      created_at: new Date().toISOString(),
+      created_by: null,
+      last_login: null,
+    },
   ];
   db.set('users', users).write();
-
-  // Frank gets extra individual permission: reports.view
-  db.set('user_permissions', [{ user_id: 'usr-006', permission_id: 'perm-011', granted: true }]).write();
+  db.set('user_permissions', []).write();
 
   const settings = [
     { key: 'session_timeout',      value: '30',          label: 'Session Timeout (minutes)',   group_name: 'Security' },
@@ -93,18 +114,7 @@ if (db.get('roles').size().value() === 0) {
   ];
   db.set('settings', settings).write();
 
-  // Seed audit logs
-  const seedLogs = [
-    { id: uuidv4(), actor_id: 'usr-001', actor_email: 'super@rbac.dev', actor_role: 'Super Admin', action: 'USER_LOGIN', target_type: 'auth', target_id: 'usr-001', target_name: 'Alice Superstar', details: null, ip_address: '127.0.0.1', status: 'SUCCESS', timestamp: new Date(Date.now() - 3600000).toISOString() },
-    { id: uuidv4(), actor_id: 'usr-002', actor_email: 'admin@rbac.dev',  actor_role: 'Admin',       action: 'USER_LOGIN', target_type: 'auth', target_id: 'usr-002', target_name: 'Bob Anderson',   details: null, ip_address: '127.0.0.1', status: 'SUCCESS', timestamp: new Date(Date.now() - 7200000).toISOString() },
-    { id: uuidv4(), actor_id: 'usr-001', actor_email: 'super@rbac.dev', actor_role: 'Super Admin', action: 'USER_CREATED', target_type: 'user', target_id: 'usr-006', target_name: 'Frank Thompson', details: JSON.stringify({role:'Staff',dept:'Marketing'}), ip_address: '127.0.0.1', status: 'SUCCESS', timestamp: new Date(Date.now() - 86400000).toISOString() },
-    { id: uuidv4(), actor_id: 'usr-002', actor_email: 'admin@rbac.dev',  actor_role: 'Admin',       action: 'USER_SUSPENDED', target_type: 'user', target_id: 'usr-004', target_name: 'Dave Johnson', details: null, ip_address: '127.0.0.1', status: 'SUCCESS', timestamp: new Date(Date.now() - 172800000).toISOString() },
-    { id: uuidv4(), actor_id: 'usr-005', actor_email: 'viewer@rbac.dev', actor_role: 'Viewer',      action: 'PERMISSION_DENIED', target_type: 'endpoint', target_id: '/api/users', target_name: 'User List API', details: JSON.stringify({required:'users.edit'}), ip_address: '127.0.0.1', status: 'DENIED', timestamp: new Date(Date.now() - 259200000).toISOString() },
-    { id: uuidv4(), actor_id: 'usr-001', actor_email: 'super@rbac.dev', actor_role: 'Super Admin', action: 'ROLE_PERMISSIONS_UPDATED', target_type: 'role', target_id: 'role-manager', target_name: 'Manager', details: JSON.stringify({added:['perm-011'],removed:[]}), ip_address: '127.0.0.1', status: 'SUCCESS', timestamp: new Date(Date.now() - 345600000).toISOString() },
-    { id: uuidv4(), actor_id: 'usr-002', actor_email: 'admin@rbac.dev',  actor_role: 'Admin',       action: 'PASSWORD_RESET', target_type: 'user', target_id: 'usr-004', target_name: 'Dave Johnson', details: null, ip_address: '127.0.0.1', status: 'SUCCESS', timestamp: new Date(Date.now() - 432000000).toISOString() },
-    { id: uuidv4(), actor_id: 'usr-003', actor_email: 'manager@rbac.dev', actor_role: 'Manager',    action: 'PERMISSION_DENIED', target_type: 'endpoint', target_id: '/api/roles', target_name: 'Roles API', details: JSON.stringify({required:'roles.create'}), ip_address: '127.0.0.1', status: 'DENIED', timestamp: new Date(Date.now() - 518400000).toISOString() },
-  ];
-  db.set('audit_logs', seedLogs).write();
+  db.set('audit_logs', []).write();
 
   console.log('✅ Database seeded successfully.');
 }

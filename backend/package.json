@@ -9,16 +9,23 @@
     "db:backup": "node scripts/db-backup.js",
     "db:restore": "node scripts/db-restore.js",
     "db:migrate": "node src/database/migrator.js",
-    "test": "node test_auth_flow.js"
+    "test": "node test_auth_flow.js && node --test test_aws_integrations.test.js",
+    "test:aws": "node --test test_aws_integrations.test.js"
   },
   "dependencies": {
+    "@aws-sdk/client-kms": "^3.1169.0",
+    "@aws-sdk/client-s3": "^3.1169.0",
+    "@aws-sdk/client-sns": "^3.1169.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "express": "^4.18.2",
+    "express": "^4.22.3",
     "express-rate-limit": "^8.7.1",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
-    "sqlite3": "^5.1.7"
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "sqlite3": "^6.0.1"
   }
 }

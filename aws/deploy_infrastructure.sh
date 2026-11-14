@@ -16,6 +16,7 @@ echo "========================================================================"
 # 1. Create KMS Key for NCDMB Regulatory Data Encryption at Rest
 echo "🔐 1. Creating AWS KMS Customer Managed Encryption Key..."
 KMS_KEY_ID=$(aws kms create-key --region $REGION --description "NCDMB O&G Predictive Maintenance Master Encryption Key" --query KeyMetadata.KeyId --output text)
+aws kms enable-key-rotation --key-id "$KMS_KEY_ID" --region "$REGION"
 aws kms create-alias --alias-name alias/ncdmb-pred-maint-key --target-key-id $KMS_KEY_ID --region $REGION
 echo "✅ KMS Key Created: $KMS_KEY_ID"
 
@@ -44,4 +45,5 @@ echo "Region: $REGION"
 echo "KMS Key ID: $KMS_KEY_ID"
 echo "Telemetry Bucket: s3://$S3_BUCKET"
 echo "SNS Alert Topic ARN: $SNS_ARN"
+echo "Configure the application with AWS_REGION=$REGION, AWS_S3_BUCKET=$S3_BUCKET, AWS_SNS_TOPIC_ARN=$SNS_ARN, AWS_KMS_KEY_ID=$KMS_KEY_ID"
 echo "========================================================================"

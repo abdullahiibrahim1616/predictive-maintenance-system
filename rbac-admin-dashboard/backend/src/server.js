@@ -1,4 +1,17 @@
+const fs = require('fs');
 require('dotenv').config();
+
+if (process.env.JWT_SECRET_FILE) {
+  try {
+    process.env.JWT_SECRET = fs.readFileSync(process.env.JWT_SECRET_FILE, 'utf8').trim();
+  } catch (err) {
+    throw new Error(`Could not read JWT_SECRET_FILE: ${err.message}`);
+  }
+}
+if (!process.env.JWT_SECRET || Buffer.byteLength(process.env.JWT_SECRET, 'utf8') < 32) {
+  throw new Error('Configure a JWT secret with at least 32 bytes before starting the RBAC backend.');
+}
+
 const express = require('express');
 const cors = require('cors');
 
@@ -12,8 +25,12 @@ const authMiddleware   = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const HOST = process.env.HOST || '127.0.0.1';
 
-app.use(cors({ origin: ['http://localhost:5180', 'http://127.0.0.1:5180', 'http://localhost:5173', 'http://localhost:4173'], credentials: true }));
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5180')
+  .split(',')
+  .map(origin => origin.trim());
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -77,13 +94,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: '500 – Internal Server Error', error: err.message });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
   console.log(`\n🔐 RBAC Admin Dashboard API`);
   console.log(`🚀 Running on http://localhost:${PORT}`);
-  console.log(`\n Demo Logins (password: Admin@123):`);
-  console.log(`   super@rbac.dev   → Super Admin`);
-  console.log(`   admin@rbac.dev   → Admin`);
-  console.log(`   manager@rbac.dev → Manager`);
-  console.log(`   staff@rbac.dev   → Staff`);
-  console.log(`   viewer@rbac.dev  → Viewer\n`);
 });
