@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cloud-Based Predictive Maintenance | Project Presentation</title>
+  <style>
+    :root {
+      --ink: #142a36;
+      --muted: #58707a;
+      --paper: #f5f4ef;
+      --white: #ffffff;
+      --navy: #102b38;
+      --navy-2: #183b49;
+      --teal: #087f78;
+      --mint: #78d6bd;
+      --gold: #f3bb57;
+      --line: #d7dfdc;
+      --pale-teal: #e3f2ed;
+      --pale-gold: #fbf0d7;
+      --pale-blue: #e8eff2;
+    }
+
+    * { box-sizing: border-box; }
+
+    @page { size: 13.333in 7.5in; margin: 0; }
+
+    html, body {
+      margin: 0;
+      background: #dce4e2;
+      color: var(--ink);
+      font-family: "Segoe UI", Arial, sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .slide, .notes-page {
+      position: relative;
+      width: 13.333in;
+      height: 7.5in;
+      overflow: hidden;
+      padding: 0.48in 0.68in 0.46in;
+      background:
+        radial-gradient(ellipse at 100% 0%, rgba(120, 214, 189, .11), transparent 33%),
+        var(--paper);
+      page-break-after: always;
+      break-after: page;
+    }
+
+    .slide:last-of-type { page-break-after: auto; break-after: auto; }
+
+    .topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 0.35in;
+      margin-bottom: 0.23in;
+      color: var(--muted);
+      font-size: 9pt;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .brand { display: flex; align-items: center; gap: .1in; }
+    .brand-mark {
+      width: .12in;
+      height: .12in;
+      border-radius: 50%;
+      background: var(--teal);
+      box-shadow: .1in 0 var(--gold);
+      margin-right: .1in;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      margin-bottom: .14in;
+      font-size: 31pt;
+      line-height: 1.07;
+      letter-spacing: -.035em;
+    }
+    h2 {
+      margin-bottom: .1in;
+      font-size: 16pt;
+      line-height: 1.15;
+      letter-spacing: -.02em;
+    }
+    h3 {
+      margin-bottom: .07in;
+      font-size: 11pt;
+      line-height: 1.2;
+    }
+    p { margin-bottom: .1in; }
+    .eyebrow {
+      margin-bottom: .12in;
+      color: var(--teal);
+      font-size: 10pt;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .lede {
+      max-width: 10.8in;
+      color: var(--muted);
+      font-size: 14pt;
+      line-height: 1.35;
+    }
+
+    .content { height: calc(100% - .9in); }
+    .footer {
+      position: absolute;
+      right: .68in;
+      bottom: .23in;
+      left: .68in;
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid var(--line);
+      padding-top: .11in;
+      color: var(--muted);
+      font-size: 8pt;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .18in; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: .16in; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: .13in; }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: .13in;
+      padding: .2in .22in;
+      background: rgba(255,255,255,.82);
+    }
+    .card.teal { background: var(--pale-teal); border-color: #bfdfd5; }
+    .card.gold { background: var(--pale-gold); border-color: #ead9ae; }
+    .card.navy { color: #f5f8f6; background: var(--navy); border-color: var(--navy); }
+    .card p, .card li { color: var(--muted); font-size: 10pt; line-height: 1.35; }
+    .card.navy p, .card.navy li { color: #c8d8d8; }
+    .card p:last-child { margin-bottom: 0; }
+    .card ul { margin: .06in 0 0; padding-left: .18in; }
+    .tag {
+      display: inline-block;
+      margin-bottom: .1in;
+      border-radius: 1in;
+      padding: .045in .1in;
+      background: var(--pale-teal);
+      color: var(--teal);
+      font-size: 8pt;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .big-number {
+      margin: .03in 0 .06in;
+      color: var(--teal);
+      font-size: 27pt;
+      font-weight: 800;
+      letter-spacing: -.04em;
+    }
+    .small { color: var(--muted); font-size: 9pt; line-height: 1.35; }
+    .callout {
+      border-left: 4px solid var(--gold);
+      border-radius: 0 .08in .08in 0;
+      padding: .13in .18in;
+      background: var(--pale-gold);
+      font-size: 10pt;
+      line-height: 1.35;
+    }
+    .checklist { list-style: none; margin: 0; padding: 0; }
+    .checklist li {
+      position: relative;
+      margin-bottom: .11in;
+      padding-left: .25in;
+      font-size: 11pt;
+      line-height: 1.3;
+    }
+    .checklist li:before {
+      position: absolute;
+      left: 0;
+      top: .01in;
+      color: var(--teal);
+      content: "●";
+      font-size: 9pt;
+    }
+
+    .cover {
+      padding: .68in .78in;
+      color: #f3f7f4;
+      background:
+        radial-gradient(ellipse at 82% 25%, rgba(120,214,189,.19), transparent 34%),
+        linear-gradient(130deg, #102b38 0%, #173d4a 62%, #0c3036 100%);
+    }
+    .cover .topline { color: #b6ccca; }
+    .cover .content { display: grid; grid-template-columns: 1.2fr .8fr; align-items: center; gap: .35in; }
+    .cover h1 { max-width: 7.5in; margin-bottom: .23in; font-size: 40pt; }
+    .cover .lede { max-width: 7in; color: #c8d9d6; font-size: 16pt; }
+    .cover .footer { border-color: rgba(255,255,255,.22); color: #b6ccca; }
+    .cover .eyebrow { color: var(--mint); }
+    .cover-art { position: relative; height: 4.1in; }
+    .cover-orbit {
+      position: absolute;
+      top: .2in;
+      right: .05in;
+      width: 3.8in;
+      height: 3.8in;
+      border: 1px solid rgba(120,214,189,.35);
+      border-radius: 50%;
+    }
+    .cover-orbit:before, .cover-orbit:after {
+      position: absolute;
+      border: 1px solid rgba(120,214,189,.22);
+      border-radius: 50%;
+      content: "";
+    }
+    .cover-orbit:before { inset: .42in; }
+    .cover-orbit:after { inset: .87in; }
+    .asset-core {
+      position: absolute;
+      top: 1.45in;
+      right: 1.28in;
+      display: grid;
+      width: 1.25in;
+      height: 1.25in;
+      place-items: center;
+      border: 1px solid rgba(120,214,189,.7);
+      border-radius: .27in;
+      background: rgba(120,214,189,.12);
+      color: var(--mint);
+      font-size: 17pt;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+    .orbit-label {
+      position: absolute;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 1in;
+      padding: .08in .14in;
+      background: #183b49;
+      color: #d8e6e2;
+      font-size: 9pt;
+      font-weight: 700;
+    }
+    .label-sensor { top: .34in; right: 1.12in; }
+    .label-insight { top: 1.85in; right: -.04in; }
+    .label-action { right: 1.1in; bottom: .23in; }
+
+    .sequence { display: grid; grid-template-columns: repeat(5, 1fr); gap: .17in; margin-top: .32in; }
+    .step {
+      position: relative;
+      min-height: 1.85in;
+      border: 1px solid var(--line);
+      border-radius: .13in;
+      padding: .19in .18in;
+      background: white;
+    }
+    .step:not(:last-child):after {
+      position: absolute;
+      top: .33in;
+      right: -.17in;
+      z-index: 1;
+      color: var(--teal);
+      content: "›";
+      font-size: 25pt;
+      font-weight: 800;
+    }
+    .step-no { color: var(--teal); font-size: 9pt; font-weight: 800; letter-spacing: .08em; }
+    .step h3 { margin-top: .15in; }
+    .architecture {
+      display: grid;
+      grid-template-columns: 1fr .22fr 1.1fr .22fr 1fr .22fr 1fr;
+      align-items: center;
+      gap: .06in;
+      margin: .28in 0 .22in;
+    }
+    .arch-box {
+      display: grid;
+      min-height: 1.45in;
+      align-content: center;
+      border: 1px solid var(--line);
+      border-radius: .14in;
+      padding: .14in;
+      background: white;
+      text-align: center;
+    }
+    .arch-box strong { margin-bottom: .08in; font-size: 11pt; }
+    .arch-box span { color: var(--muted); font-size: 9pt; line-height: 1.25; }
+    .arch-box.core { background: var(--navy); border-color: var(--navy); color: white; }
+    .arch-box.core span { color: #c8d8d8; }
+    .arrow { color: var(--teal); text-align: center; font-size: 21pt; font-weight: 800; }
+    .optional-row { display: grid; grid-template-columns: 1fr 3fr; align-items: center; gap: .18in; }
+    .optional-row .arch-box { min-height: .8in; }
+    .optional-label { color: var(--muted); font-size: 9pt; font-weight: 700; }
+
+    .formula {
+      margin: .2in 0;
+      border-radius: .13in;
+      padding: .25in;
+      background: var(--navy);
+      color: white;
+      text-align: center;
+      font-size: 20pt;
+      font-weight: 800;
+      letter-spacing: -.02em;
+    }
+    .formula span { color: var(--mint); }
+    .roadmap { display: grid; grid-template-columns: repeat(4, 1fr); gap: .14in; margin-top: .22in; }
+    .phase { min-height: 2.45in; border-top: 4px solid var(--teal); }
+    .phase.future { border-top-color: var(--gold); }
+    .phase .tag { margin-bottom: .12in; }
+    .source-list { display: grid; grid-template-columns: 1fr 1fr; gap: .1in .24in; }
+    .source-item { border-bottom: 1px solid var(--line); padding-bottom: .08in; font-size: 9pt; line-height: 1.3; }
+    .source-item strong { display: block; margin-bottom: .02in; }
+
+    .notes-page {
+      padding: .56in .7in;
+      background: #fff;
+    }
+    .notes-page h1 { font-size: 27pt; }
+    .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .18in .28in; }
+    .note {
+      border-left: 3px solid var(--teal);
+      padding: .04in 0 .04in .14in;
+    }
+    .note h2 { margin-bottom: .05in; color: var(--teal); font-size: 11pt; }
+    .note p { margin-bottom: 0; color: var(--muted); font-size: 9pt; line-height: 1.28; }
+    .qa { margin-top: .12in; border-radius: .1in; padding: .12in .16in; background: var(--pale-blue); }
+    .qa h3 { margin-bottom: .04in; }
+    .qa p { margin-bottom: .05in; font-size: 8.5pt; line-height: 1.25; }
+    .qa p:last-child { margin-bottom: 0; }
+    .notes-page .footer { left: .7in; right: .7in; }
+
+    @media print {
+      html, body { width: 13.333in; background: white; }
+      .slide, .notes-page { margin: 0; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <section class="slide cover">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark"></span>Project presentation</div>
+      <span>Concept · prototype · intended impact</span>
+    </div>
+    <div class="content">
+      <div>
+        <p class="eyebrow">Cloud-based predictive maintenance system</p>
+        <h1>From equipment signals to better maintenance decisions.</h1>
+        <p class="lede">A project overview of the problem, aim, objectives, prototype, and the practical outcomes this system is intended to support.</p>
+        <p style="margin-top:.28in;color:#b6ccca;font-size:11pt">Focus: rotating equipment in Nigerian oil and gas operations</p>
+      </div>
+      <div class="cover-art" aria-hidden="true">
+        <div class="cover-orbit"></div>
+        <div class="asset-core">ASSET</div>
+        <div class="orbit-label label-sensor">SENSOR DATA</div>
+        <div class="orbit-label label-insight">HEALTH INSIGHT</div>
+        <div class="orbit-label label-action">MAINTENANCE ACTION</div>
+      </div>
+    </div>
+    <div class="footer"><span>Project aims and objectives</span><span>Presentation deck · 01</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="topline"><div class="brand"><span class="brand-mark"></span>01 · The problem</div><span>Why this project matters</span></div>
+    <div class="content">
+      <p class="eyebrow">Maintenance is a decision problem</p>
+      <h1>When asset condition is hard to see, action comes too late—or too soon.</h1>
+      <p class="lede">For critical pumps, compressors, and other rotating assets, a failure can disrupt production, create urgent repair work, and complicate planning.</p>
+      <div class="grid-3" style="margin-top:.28in">
+        <div class="card">
+          <span class="tag">Reactive</span>
+          <h2>Respond after failure</h2>
+          <p>Teams may have limited warning, less time to prepare, and an urgent repair to coordinate.</p>
+        </div>
+        <div class="card gold">
+          <span class="tag" style="background:#fff">Calendar-based</span>
+          <h2>Service on a schedule</h2>
+          <p>Fixed intervals are useful, but they may not reflect the asset’s actual operating condition.</p>
+        </div>
+        <div class="card teal">
+          <span class="tag" style="background:#fff">Condition-informed</span>
+          <h2>Use evidence to prioritize</h2>
+          <p>Sensor readings and asset context can help teams investigate warning signs and plan work.</p>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:.22in"><strong>Project question:</strong> How can a practical software prototype turn selected equipment measurements into clear, traceable maintenance decisions?</div>
+    </div>
+    <div class="footer"><span>Problem framing · no site loss figure is claimed in this deck</span><span>02</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="topline"><div class="brand"><span class="brand-mark"></span>02 · The aim</div><span>Purpose and intended achievement</span></div>
+    <div class="content">
+      <p class="eyebrow">Overall aim</p>
+      <h1>Build a cloud-ready decision-support system for earlier, more informed maintenance.</h1>
+      <p class="lede">The project brings equipment records, telemetry review, work-order coordination, and operational visibility into one software workflow.</p>
+      <div class="grid-2" style="margin-top:.27in">
+        <div class="card navy">
+          <span class="tag" style="background:#254c58;color:#b8f0dd">The system is meant to help</span>
+          <ul>
+            <li>Spot readings that cross configured warning rules.</li>
+            <li>Give teams a shared view of asset condition and open work.</li>
+            <li>Turn a signal into an accountable inspection or maintenance task.</li>
+            <li>Make the assumptions behind estimated benefits visible.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="tag">Intended achievement</span>
+          <div class="big-number">Signal → decision → action</div>
+          <p>Demonstrate an end-to-end prototype that supports a more planned response to equipment risk—not claim that failures can be eliminated or predicted with certainty.</p>
+        </div>
+      </div>
+      <p class="small" style="margin-top:.18in"><strong>Project orientation:</strong> an operational decision-support prototype; plant staff remain responsible for interpreting alerts and authorizing work.</p>
+    </div>
+    <div class="footer"><span>Aim · the overall change the project seeks to support</span><span>03</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="topline"><div class="brand"><span class="brand-mark"></span>03 · Objectives &amp; scope</div><span>What the project will do—and not claim</span></div>
+    <div class="content">
+      <p class="eyebrow">Specific objectives</p>
+      <h1>Deliver a usable workflow, then test whether it is useful.</h1>
+      <div class="grid-2" style="margin-top:.2in">
+        <div>
+          <ul class="checklist">
+            <li>Represent facilities, equipment, users, telemetry, and work orders in a shared application.</li>
+            <li>Accept vibration, temperature, pressure, and flow measurements for an asset.</li>
+            <li>Apply transparent condition rules and show a health indicator with an indicative RUL estimate.</li>
+            <li>Support alerts, work-order follow-up, audit visibility, and role-aware screens.</li>
+            <li>Show an illustrative cost-avoidance calculation with its assumptions.</li>
+            <li>Define a path to validate thresholds, data quality, usability, and operational benefit.</li>
+          </ul>
+        </div>
+        <div>
+          <div class="card teal" style="margin-bottom:.14in">
+            <span class="tag" style="background:white">In scope for the prototype</span>
+            <p>Web interface, API, database-backed records, telemetry scoring, work orders, cost estimates, audit events, and optional AWS service integrations.</p>
+          </div>
+          <div class="card gold">
+            <span class="tag" style="background:white">Not established by the current prototype</span>
+            <p>Live industrial sensor connectivity, a validated machine-learning model, production-proven RUL, guaranteed savings, offline field synchronization, or regulatory certification.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>Specific objectives · measurable evidence belongs in a pilot</span><span>04</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="topline"><div class="brand"><span class="brand-mark"></span>04 · Operating concept</div><span>How value is intended to flow</span></div>
+    <div class="content">
+      <p class="eyebrow">The maintenance decision loop</p>
+      <h1>A useful alert is the start of a workflow—not the end of one.</h1>
+      <p class="lede">The system connects a measurement to a reviewable action so that technical signals can be considered in maintenance planning.</p>
+      <div class="sequence">
+        <div class="step"><span class="step-no">01 · OBSERVE</span><h3>Capture readings</h3><p class="small">Receive equipment measurements through a simulator or API.</p></div>
+        <div class="step"><span class="step-no">02 · ASSESS</span><h3>Check condition</h3><p class="small">Apply configured rules; calculate a health score and indicative RUL.</p></div>
+        <div class="step"><span class="step-no">03 · PRIORITIZE</span><h3>Raise a flag</h3><p class="small">Show abnormal conditions and create or update a work item.</p></div>
+        <div class="step"><span class="step-no">04 · RESPOND</span><h3>Review and act</h3><p class="small">Maintenance staff assess the alert, assign work, and record progress.</p></div>
+        <div class="step"><span class="step-no">05 · LEARN</span><h3>Measure results</h3><p class="small">Compare alerts, maintenance outcomes, downtime, and assumptions over time.</p></div>
+      </div>
+      <div class="callout" style="margin-top:.25in"><strong>Human oversight:</strong> the prototype provides indicators and workflow support; it does not autonomously control equipment or replace engineering judgment.</div>
+    </div>
+    <div class="footer"><span>Conceptual workflow · actual sensor and plant connections remain future work</span><span>05</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="topline"><div class="brand"><span class="brand-mark"></span>05 · Technical design</div><span>What is implemented in the software prototype</span></div>
+    <div class="content">
+      <p class="eyebrow">A cloud-ready, modular application</p>
+      <h1>Measurements pass through an API, rules, records, and a human-facing dashboard.</h1>
+      <div class="architecture">
+        <div class="arch-box"><strong>Data input</strong><span>Simulator or authenticated telemetry API<br><b>Real sensors not connected</b></span></div>
+        <div class="arrow">›</div>
+        <div class="arch-box core"><strong>Application API</strong><span>Node.js / Express<br>Telemetry rules · work orders<br>Auth · audit events</span></div>
+        <div class="arrow">›</div>
+        <div class="arch-box"><strong>Data store</strong><span>PostgreSQL in Compose deployment<br>SQLite used in local/test contexts</span></div>
+        <div class="arrow">›</div>
+        <div class="arch-box"><strong>Web interface</strong><span>React dashboards<br>Asset, alert, and work views</span></div>
+      </div>
+      <div class="optional-row">
+        <div class="optional-label">Optional AWS integrations<br>configuration + permissions required</div>
+        <div class="grid-3">
+          <div class="arch-box"><strong>Amazon S3</strong><span>Telemetry archive</span></div>
+          <div class="arch-box"><strong>Amazon SNS</strong><span>Alert delivery</span></div>
+          <div class="arch-box"><strong>AWS KMS</strong><span>Key rotation / S3 encryption option</span></div>
+        </div>
+      </div>
+      <p class="small" style="margin-top:.17in">Deployment notes describe a local Docker Compose stack. The AWS infrastructure script provisions selected services; it does not deploy the application or complete production cloud networking.</p>
+    </div>
+    <div class="footer"><span>Architecture based on the repository implementation and deployment notes</span><span>06</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="topline"><div class="brand"><span class="brand-mark"></span>06 · Assessment method</div><span>Transparent rules, honest limits</span></div>
+    <div class="content">
+      <p class="eyebrow">How the current prototype scores telemetry</p>
+      <h1>Interpretable thresholds make the first version easy to inspect—and necessary to validate.</h1>
+      <div class="grid-3" style="margin-top:.18in">
+        <div class="card">
+          <span class="tag">Vibration · mm/s</span>
+          <div class="big-number">4.5 / 8.0</div>
+          <p>Configured warning / critical thresholds.</p>
+        </div>
+        <div class="card">
+          <span class="tag">Temperature · °C</span>
+          <div class="big-number">75 / 95</div>
+          <p>Configured warning / critical thresholds.</p>
+        </div>
+        <div class="card">
+          <span class="tag">Pressure + flow</span>
+          <div class="big-number" style="font-size:20pt">&gt;1500 / &lt;10k</div>
+          <p>Combined rule: pressure above 1,500 psi and flow below 10,000 bpd.</p>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-top:.15in">
+        <div class="card teal">
+          <h2>What the score means</h2>
+          <p>Rule penalties are subtracted from 100 to form a 0–100 health index. Status bands and a health-below-65 rule support warning and work-order workflows.</p>
+        </div>
+        <div class="card gold">
+          <h2>What the score does not mean</h2>
+          <p>The estimate is not trained on site failure histories. RUL is a code-defined heuristic, not a statistically validated failure forecast. Default thresholds need asset and operating-context review.</p>
+        </div>
+      </div>
+      <p class="small" style="margin-top:.12in">Source: <code>backend/src/services/predictiveEngine.js</code>. Treat example thresholds as prototype defaults, not safe operating limits.</p>
+    </div>
+    <div class="footer"><span>Assessment method · indicative decision support only</span><span>07</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="topline"><div class="brand"><span class="brand-mark"></span>07 · People &amp; workflow</div><span>Roles turn information into action</span></div>
+    <div class="content">
+      <p class="eyebrow">A shared operational picture</p>
+      <h1>Different users need different views of the same maintenance story.</h1>
+      <div class="grid-4" style="margin-top:.23in">
+        <div class="card navy">
+          <span class="tag" style="background:#254c58;color:#b8f0dd">Govern</span>
+          <h2>Administrator</h2>
+          <p>Manage access and review system activity within authorized permissions.</p>
+        </div>
+        <div class="card teal">
+          <span class="tag" style="background:white">Plan</span>
+          <h2>Maintenance manager</h2>
+          <p>Review asset condition, prioritize alerts, and coordinate work orders.</p>
+        </div>
+        <div class="card">
+          <span class="tag">Monitor</span>
+          <h2>Operations manager</h2>
+          <p>View fleet summaries and indicative cost-avoidance reporting.</p>
+        </div>
+        <div class="card gold">
+          <span class="tag" style="background:white">Execute</span>
+          <h2>Field technician</h2>
+          <p>Review assigned tasks and record maintenance progress.</p>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:.25in"><strong>Intended handoff:</strong> a flagged asset becomes a reviewed work order, an assigned task, and a recorded outcome. Reliable operational use depends on accurate asset data, clear ownership, and a verified response procedure.</div>
+      <p class="small" style="margin-top:.15in">The React application includes role-oriented views; the exact scope of each permission must be checked against configured server-side roles before an operational pilot.</p>
+    </div>
+    <div class="footer"><span>Roles shown reflect the project interface and intended users</span><span>08</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="topline"><div class="brand"><span class="brand-mark"></span>08 · Value hypothesis</div><span>Illustrative economics—not a realized saving</span></div>
+    <div class="content">
+      <p class="eyebrow">Make the business case inspectable</p>
+      <h1>Estimate avoided production loss only when the assumptions are visible.</h1>
+      <div class="formula">Net estimate = (<span>downtime hours avoided × loss rate per hour</span>) − repair cost</div>
+      <div class="grid-4">
+        <div class="card"><span class="tag">Example assumption</span><div class="big-number">48 h</div><p>Downtime avoided</p></div>
+        <div class="card"><span class="tag">Example assumption</span><div class="big-number">$18,500</div><p>Estimated loss per hour</p></div>
+        <div class="card"><span class="tag">Example assumption</span><div class="big-number">$42,000</div><p>Preventive repair cost</p></div>
+        <div class="card teal"><span class="tag" style="background:white">Illustrative output</span><div class="big-number">$846,000</div><p>Net estimate for this scenario</p></div>
+      </div>
+      <div class="callout" style="margin-top:.2in"><strong>Calculation:</strong> (48 × $18,500) − $42,000 = $846,000. The values mirror a code example; they are not verified site data or evidence of money actually saved.</div>
+      <p class="small" style="margin-top:.12in">A defensible pilot should replace assumptions with approved production-loss, repair-cost, downtime, and counterfactual data—and report uncertainty.</p>
+    </div>
+    <div class="footer"><span>Value hypothesis · calculate, verify, then report</span><span>09</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="topline"><div class="brand"><span class="brand-mark"></span>09 · Trust &amp; readiness</div><span>Controls must be matched to the deployment</span></div>
+    <div class="content">
+      <p class="eyebrow">Security and operational boundaries</p>
+      <h1>Security features exist in the prototype; production assurance still requires deployment work.</h1>
+      <div class="grid-2" style="margin-top:.18in">
+        <div class="card teal">
+          <span class="tag" style="background:white">Present in the project</span>
+          <ul>
+            <li>Token-based authentication and role-oriented access routes.</li>
+            <li>Audit events for selected user and work-order actions.</li>
+            <li>Docker secrets for application and database credentials in the documented Compose setup.</li>
+            <li>Optional S3 telemetry archival, SNS notification delivery, and KMS integrations.</li>
+          </ul>
+        </div>
+        <div class="card gold">
+          <span class="tag" style="background:white">Before real operational use</span>
+          <ul>
+            <li>Choose and harden cloud hosting, networking, TLS, IAM, and secret delivery.</li>
+            <li>Prove backups, recovery, monitoring, access reviews, and incident response.</li>
+            <li>Validate alert performance and work practices with asset specialists.</li>
+            <li>Review privacy, regulatory, and site safety requirements with responsible authorities.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="small" style="margin-top:.17in"><strong>Important:</strong> optional infrastructure and source-code controls do not by themselves establish a production deployment, end-to-end encryption, immutable audit storage, or regulatory certification.</p>
+    </div>
+    <div class="footer"><span>Readiness · verify controls in the actual deployment environment</span><span>10</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="topline"><div class="brand"><span class="brand-mark"></span>10 · Roadmap &amp; evaluation</div><span>How to move from prototype to evidence</span></div>
+    <div class="content">
+      <p class="eyebrow">A staged path to credible impact</p>
+      <h1>Earn operational confidence in phases.</h1>
+      <div class="roadmap">
+        <div class="card phase">
+          <span class="tag">Now · prototype</span>
+          <h2>Demonstrate the workflow</h2>
+          <p>Exercise APIs, dashboards, rules, work orders, and audit records with controlled test data.</p>
+        </div>
+        <div class="card phase">
+          <span class="tag">Next · validate</span>
+          <h2>Ground the model</h2>
+          <p>Review sensor quality, asset-specific thresholds, failure histories, and the RUL approach with engineers.</p>
+        </div>
+        <div class="card phase future">
+          <span class="tag" style="background:#fff">Pilot · integrate</span>
+          <h2>Test in a bounded setting</h2>
+          <p>Connect an approved data source, confirm response ownership, measure false alerts and useful lead time.</p>
+        </div>
+        <div class="card phase future">
+          <span class="tag" style="background:#fff">Scale · govern</span>
+          <h2>Prove safe operation</h2>
+          <p>Establish hosting, support, recovery, security assurance, and evidence-based value reporting.</p>
+        </div>
+      </div>
+      <div class="grid-3" style="margin-top:.16in">
+        <div class="small"><strong>Technical:</strong> ingestion reliability, data quality, alert precision / recall.</div>
+        <div class="small"><strong>Operational:</strong> useful warning lead time, response time, work-order closure.</div>
+        <div class="small"><strong>Business:</strong> verified downtime and repair outcomes, with transparent assumptions.</div>
+      </div>
+      <p class="small" style="margin-top:.13in">Set baselines and targets with the pilot stakeholders; this presentation does not invent a performance target.</p>
+    </div>
+    <div class="footer"><span>Evaluation · outcomes to establish through testing and a controlled pilot</span><span>11</span></div>
+  </section>
+
+  <section class="slide">
+    <div class="topline"><div class="brand"><span class="brand-mark"></span>11 · Summary &amp; references</div><span>What this project means to achieve</span></div>
+    <div class="content">
+      <p class="eyebrow">The intended contribution</p>
+      <h1>A practical bridge between equipment data and maintenance action.</h1>
+      <div class="grid-2" style="margin-top:.16in">
+        <div class="card navy">
+          <span class="tag" style="background:#254c58;color:#b8f0dd">In one sentence</span>
+          <p style="color:white;font-size:16pt;line-height:1.35">This project aims to help maintenance teams notice potential equipment problems earlier, coordinate a response, and learn whether the intervention made a measurable difference.</p>
+        </div>
+        <div class="card">
+          <h2>Evidence used to prepare this deck</h2>
+          <div class="source-list">
+            <div class="source-item"><strong>Capstone context</strong><code>docs/Final_Capstone_Report_and_Defense_Package.md</code></div>
+            <div class="source-item"><strong>Deployment boundaries</strong><code>docs/deployment.md</code> and <code>docker-compose.yml</code></div>
+            <div class="source-item"><strong>Telemetry logic</strong><code>backend/src/services/predictiveEngine.js</code></div>
+            <div class="source-item"><strong>Telemetry workflow</strong><code>backend/src/controllers/telemetryController.js</code></div>
+            <div class="source-item"><strong>Financial formula</strong><code>backend/src/services/costCalculator.js</code></div>
+            <div class="source-item"><strong>Optional AWS services</strong><code>backend/src/services/awsIntegrations.js</code></div>
+          </div>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:.16in"><strong>Closing message:</strong> the prototype demonstrates a path from signal to action. Validated data, engineering review, a controlled pilot, and production controls are the next steps toward operational value.</div>
+    </div>
+    <div class="footer"><span>Source-grounded project summary · see presenter guide on following pages</span><span>12</span></div>
+  </section>
+
+  <section class="notes-page">
+    <div class="topline"><div class="brand"><span class="brand-mark"></span>Presenter guide · pages 1–6</div><span>Suggested talk track · approximately 5 minutes</span></div>
+    <h1>Tell the story: problem, purpose, and design.</h1>
+    <div class="notes-grid">
+      <div class="note"><h2>01 · Opening</h2><p>Introduce the project as a cloud-ready maintenance decision-support prototype for rotating assets in Nigerian oil and gas operations. State that you will cover the problem, goals, current design, and the work still needed before an operational pilot.</p></div>
+      <div class="note"><h2>02 · Problem</h2><p>Explain the practical difficulty: teams need timely, trustworthy information to prioritize equipment work. Avoid quoting a broad downtime-cost figure unless you have an independently sourced, relevant site or industry reference.</p></div>
+      <div class="note"><h2>03 · Aim</h2><p>Describe the project aim in your own words: connect equipment signals to an understandable health view and a maintenance workflow. Emphasize that the software supports human decisions; it does not guarantee a prediction or prevent every failure.</p></div>
+      <div class="note"><h2>04 · Objectives</h2><p>Walk through the concrete objectives: organize asset data, accept selected measurements, apply visible scoring rules, support alerts and work orders, show an assumption-based financial estimate, and define how to evaluate usefulness. Be clear about items not yet proven.</p></div>
+      <div class="note"><h2>05 · Workflow</h2><p>Describe the five-step loop. The technical signal matters only if a responsible person reviews it, coordinates a task, records the outcome, and uses the evidence to improve the process.</p></div>
+      <div class="note"><h2>06 · Architecture</h2><p>Explain the React front end and Node/Express API, with database-backed asset, telemetry, and work-order records. Inputs currently come through the API or simulator; real plant sensors are not connected. AWS archival, notifications, and key functions are optional integrations.</p></div>
+    </div>
+    <div class="footer"><span>Speaker notes · clarify prototype versus intended deployment</span><span>13</span></div>
+  </section>
+
+  <section class="notes-page">
+    <div class="topline"><div class="brand"><span class="brand-mark"></span>Presenter guide · pages 7–12</div><span>Evidence, limitations, and defense questions</span></div>
+    <h1>Tell the story: evidence, limits, and next steps.</h1>
+    <div class="notes-grid">
+      <div class="note"><h2>07 · Assessment</h2><p>Describe the current rule-based thresholds as transparent starting points. State plainly that the health index and RUL are heuristics, not an ML model validated on historical failures. Ask engineers to approve asset-specific limits before any pilot.</p></div>
+      <div class="note"><h2>08 · Users</h2><p>Explain how admin, maintenance, operations, and technician views support governance, planning, monitoring, and execution. The intended handoff is an alert, a reviewed work order, and a recorded maintenance result.</p></div>
+      <div class="note"><h2>09 · Financial example</h2><p>Show the arithmetic: 48 hours × $18,500 per hour = $888,000 gross avoided loss; less $42,000 repair cost gives an $846,000 illustrative net estimate. These are example assumptions, not measured savings. A real case needs approved site data and a defensible comparison.</p></div>
+      <div class="note"><h2>10 · Readiness</h2><p>Point out existing application controls and optional AWS integrations, then distinguish them from production assurance. Hosting, network/TLS, IAM, recovery, monitoring, testing, and compliance reviews must be addressed in the chosen environment.</p></div>
+      <div class="note"><h2>11 · Roadmap</h2><p>Propose a sequence: demonstrate with test data, validate with engineers and historical data, run a bounded pilot, then scale only after measured evidence and operational controls are acceptable.</p></div>
+      <div class="note"><h2>12 · Close</h2><p>Restate the project’s value as a bridge from equipment signal to accountable action. Invite questions about data validation, safe deployment, alert quality, or how financial outcomes will be measured.</p></div>
+    </div>
+    <div class="grid-2">
+      <div class="qa">
+        <h3>“Is this machine learning?”</h3>
+        <p><strong>Suggested answer:</strong> Not in the current prototype. It uses configured threshold rules and a heuristic RUL mapping. A data-backed predictive model is a future step, subject to reliable historical failure data and validation.</p>
+      </div>
+      <div class="qa">
+        <h3>“Has the system prevented downtime or saved money?”</h3>
+        <p><strong>Suggested answer:</strong> The code can calculate an illustrative estimate from assumed inputs. It has not established realized operational savings. A pilot would need verified downtime, costs, and an agreed comparison method.</p>
+      </div>
+      <div class="qa">
+        <h3>“Is it live in the cloud with connected sensors?”</h3>
+        <p><strong>Suggested answer:</strong> The repository provides a local Compose deployment and optional AWS integrations. The deployment guide explicitly identifies application hosting and other production setup as remaining work; live field sensors are not connected.</p>
+      </div>
+      <div class="qa">
+        <h3>“What is the next credible milestone?”</h3>
+        <p><strong>Suggested answer:</strong> Agree a bounded pilot, validate the measurements and thresholds with asset specialists, set baseline KPIs, and verify response procedures and production controls before connecting operational data.</p>
+      </div>
+    </div>
+    <div class="footer"><span>Defense guide · keep examples, assumptions, and verified results distinct</span><span>14</span></div>
+  </section>
+</body>
+</html>
