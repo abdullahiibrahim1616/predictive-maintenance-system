@@ -9,3 +9,10 @@ build/
 backend/backups/
 backups/
 rbac-admin-dashboard/backend/*.db.json
+# Sensitive database configuration
+db-config-output.txt
+*.pem
+*.key
+.terraform/
+*.tfstate
+*.tfstate.*
