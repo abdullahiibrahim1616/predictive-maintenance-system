@@ -65,7 +65,8 @@ function createAwsIntegrations({ env = process.env, clientFactory } = {}) {
         const equipmentId = encodeURIComponent(String(record.equipment_id || 'unknown'));
         const recordId = encodeURIComponent(String(record.id || 'unknown'));
         const datePrefix = date.toISOString().slice(0, 10).replace(/-/g, '/');
-        const key = `${prefix}/${datePrefix}/${equipmentId}/${recordId}.json`;
+        const keyParts = [prefix, datePrefix, equipmentId, `${recordId}.json`].filter(Boolean);
+        const key = keyParts.join('/');
         const kmsKeyId = getSetting('AWS_KMS_KEY_ID');
         const input = {
             Bucket: bucket,

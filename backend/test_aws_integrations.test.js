@@ -66,6 +66,27 @@ test('S3 archives telemetry using the configured bucket and KMS key', async () =
     assert.equal(call.command.input.SSEKMSKeyId, 'kms-key-1');
 });
 
+test('S3 archives telemetry without introducing a leading slash when the prefix is empty', async () => {
+    const { clientFactory, calls } = createStubFactory();
+    const integrations = createAwsIntegrations({
+        env: {
+            AWS_REGION: 'eu-west-1',
+            AWS_S3_BUCKET: 'telemetry-bucket',
+            AWS_S3_PREFIX: '/',
+            AWS_KMS_KEY_ID: 'kms-key-1'
+        },
+        clientFactory
+    });
+
+    await integrations.archiveTelemetry({
+        id: 'log-2',
+        timestamp: '2026-11-14T12:00:00.000Z',
+        equipment_id: 'asset-2'
+    });
+
+    assert.equal(calls[0].command.input.Key, '2026/11/14/asset-2/log-2.json');
+});
+
 test('SNS remains visibly simulated unless explicitly enabled', async () => {
     const { clientFactory, calls } = createStubFactory();
     const integrations = createAwsIntegrations({ env: {}, clientFactory });

@@ -272,6 +272,19 @@
   ],
   "users": [
     {
+      "id": "usr-bootstrap-rbac",
+      "full_name": "System Administrator",
+      "email": "rbac-admin@localhost.test",
+      "password_hash": "$2a$10$Xhfo/jc38yWxdsqieDtthOmm/kWEIHurm6CNP.VcaierLqhYPA2Pm",
+      "role_id": "role-superadmin",
+      "department": "Administration",
+      "avatar_color": "#ef4444",
+      "status": "ACTIVE",
+      "created_at": "2026-11-16T11:44:58.606Z",
+      "created_by": null,
+      "last_login": "2026-11-16T11:49:48.080Z"
+    },
+    {
       "id": "usr-001",
       "full_name": "Alice Superstar",
       "email": "super@rbac.dev",
@@ -358,6 +371,48 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "f031391f-c6fc-45bf-8337-ae98df7a4498",
+      "actor_id": "usr-bootstrap-rbac",
+      "actor_email": "rbac-admin@localhost.test",
+      "actor_role": "Super Admin",
+      "action": "USER_LOGIN",
+      "target_type": "auth",
+      "target_id": "usr-bootstrap-rbac",
+      "target_name": "System Administrator",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "status": "SUCCESS",
+      "timestamp": "2026-11-16T11:45:42.714Z"
+    },
+    {
+      "id": "585b1f4e-a037-46b2-b0d0-e2033871f773",
+      "actor_id": "usr-004",
+      "actor_email": "staff@rbac.dev",
+      "actor_role": "Staff",
+      "action": "USER_LOGIN",
+      "target_type": "auth",
+      "target_id": "usr-004",
+      "target_name": "Dave Johnson",
+      "details": null,
+      "ip_address": "::1",
+      "status": "SUCCESS",
+      "timestamp": "2026-07-23T11:33:30.442Z"
+    },
+    {
+      "id": "8173691e-5578-482e-8c9f-ea76d7b9142b",
+      "actor_id": "usr-001",
+      "actor_email": "super@rbac.dev",
+      "actor_role": "Super Admin",
+      "action": "USER_LOGOUT",
+      "target_type": "auth",
+      "target_id": "usr-001",
+      "target_name": "Alice Superstar",
+      "details": null,
+      "ip_address": "::1",
+      "status": "SUCCESS",
+      "timestamp": "2026-07-23T11:32:51.669Z"
+    },
     {
       "id": "a7d4e5b2-3295-46a3-bb1e-f17730fa5d3d",
       "actor_id": "usr-003",
@@ -583,32 +638,18 @@
       "timestamp": "2026-07-17T10:25:38.582Z"
     },
     {
-      "id": "8173691e-5578-482e-8c9f-ea76d7b9142b",
-      "actor_id": "usr-001",
-      "actor_email": "super@rbac.dev",
+      "id": "cb5db4f2-ed2d-4f6d-814d-d24e2205bcde",
+      "actor_id": "usr-bootstrap-rbac",
+      "actor_email": "rbac-admin@localhost.test",
       "actor_role": "Super Admin",
-      "action": "USER_LOGOUT",
-      "target_type": "auth",
-      "target_id": "usr-001",
-      "target_name": "Alice Superstar",
-      "details": null,
-      "ip_address": "::1",
-      "status": "SUCCESS",
-      "timestamp": "2026-07-23T11:32:51.669Z"
-    },
-    {
-      "id": "585b1f4e-a037-46b2-b0d0-e2033871f773",
-      "actor_id": "usr-004",
-      "actor_email": "staff@rbac.dev",
-      "actor_role": "Staff",
       "action": "USER_LOGIN",
       "target_type": "auth",
-      "target_id": "usr-004",
-      "target_name": "Dave Johnson",
+      "target_id": "usr-bootstrap-rbac",
+      "target_name": "System Administrator",
       "details": null,
-      "ip_address": "::1",
+      "ip_address": "127.0.0.1",
       "status": "SUCCESS",
-      "timestamp": "2026-07-23T11:33:30.442Z"
+      "timestamp": "2026-11-16T11:49:48.107Z"
     }
   ],
   "settings": [
