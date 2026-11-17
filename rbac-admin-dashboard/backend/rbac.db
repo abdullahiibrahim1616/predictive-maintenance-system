@@ -282,7 +282,7 @@
       "status": "ACTIVE",
       "created_at": "2026-11-16T11:44:58.606Z",
       "created_by": null,
-      "last_login": "2026-11-16T11:49:48.080Z"
+      "last_login": "2026-11-16T12:17:05.005Z"
     },
     {
       "id": "usr-001",
@@ -371,6 +371,20 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "cb5db4f2-ed2d-4f6d-814d-d24e2205bcde",
+      "actor_id": "usr-bootstrap-rbac",
+      "actor_email": "rbac-admin@localhost.test",
+      "actor_role": "Super Admin",
+      "action": "USER_LOGIN",
+      "target_type": "auth",
+      "target_id": "usr-bootstrap-rbac",
+      "target_name": "System Administrator",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "status": "SUCCESS",
+      "timestamp": "2026-11-16T11:49:48.107Z"
+    },
     {
       "id": "f031391f-c6fc-45bf-8337-ae98df7a4498",
       "actor_id": "usr-bootstrap-rbac",
@@ -638,7 +652,21 @@
       "timestamp": "2026-07-17T10:25:38.582Z"
     },
     {
-      "id": "cb5db4f2-ed2d-4f6d-814d-d24e2205bcde",
+      "id": "7ed166c1-5c7c-4b7f-88f2-34274189ef99",
+      "actor_id": "usr-bootstrap-rbac",
+      "actor_email": "rbac-admin@localhost.test",
+      "actor_role": "Super Admin",
+      "action": "USER_LOGOUT",
+      "target_type": "auth",
+      "target_id": "usr-bootstrap-rbac",
+      "target_name": "System Administrator",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "status": "SUCCESS",
+      "timestamp": "2026-11-16T12:07:48.788Z"
+    },
+    {
+      "id": "1c29c2c3-c48f-4753-ba86-b408c48fe260",
       "actor_id": "usr-bootstrap-rbac",
       "actor_email": "rbac-admin@localhost.test",
       "actor_role": "Super Admin",
@@ -649,7 +677,49 @@
       "details": null,
       "ip_address": "127.0.0.1",
       "status": "SUCCESS",
-      "timestamp": "2026-11-16T11:49:48.107Z"
+      "timestamp": "2026-11-16T12:13:58.274Z"
+    },
+    {
+      "id": "9c82b482-e53f-47e6-8075-3eaccce3d20f",
+      "actor_id": "usr-bootstrap-rbac",
+      "actor_email": "rbac-admin@localhost.test",
+      "actor_role": "Super Admin",
+      "action": "USER_LOGIN",
+      "target_type": "auth",
+      "target_id": "usr-bootstrap-rbac",
+      "target_name": "System Administrator",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "status": "SUCCESS",
+      "timestamp": "2026-11-16T12:14:40.317Z"
+    },
+    {
+      "id": "5c830022-5886-43c0-acbe-a89af8b9aa19",
+      "actor_id": "usr-bootstrap-rbac",
+      "actor_email": "rbac-admin@localhost.test",
+      "actor_role": "Super Admin",
+      "action": "USER_LOGIN",
+      "target_type": "auth",
+      "target_id": "usr-bootstrap-rbac",
+      "target_name": "System Administrator",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "status": "SUCCESS",
+      "timestamp": "2026-11-16T12:15:24.927Z"
+    },
+    {
+      "id": "30c9e35f-5cbb-4ed2-8e0f-d785cf986953",
+      "actor_id": "usr-bootstrap-rbac",
+      "actor_email": "rbac-admin@localhost.test",
+      "actor_role": "Super Admin",
+      "action": "USER_LOGIN",
+      "target_type": "auth",
+      "target_id": "usr-bootstrap-rbac",
+      "target_name": "System Administrator",
+      "details": null,
+      "ip_address": "127.0.0.1",
+      "status": "SUCCESS",
+      "timestamp": "2026-11-16T12:17:05.025Z"
     }
   ],
   "settings": [
