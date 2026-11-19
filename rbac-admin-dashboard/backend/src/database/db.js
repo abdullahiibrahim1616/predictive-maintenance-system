@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
-require('dotenv').config();
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 
 const DB_PATH = path.resolve(process.env.DB_PATH || './rbac.db.json');
 const adapter = new FileSync(DB_PATH);
@@ -73,8 +73,11 @@ if (db.get('roles').size().value() === 0) {
   }
 
   let bootstrapPassword;
+  const resolvedPasswordPath = path.isAbsolute(bootstrapPasswordFile)
+    ? bootstrapPasswordFile
+    : path.resolve(__dirname, '../../../', bootstrapPasswordFile);
   try {
-    bootstrapPassword = fs.readFileSync(bootstrapPasswordFile, 'utf8').trim();
+    bootstrapPassword = fs.readFileSync(resolvedPasswordPath, 'utf8').trim();
   } catch (err) {
     throw new Error(`Could not read BOOTSTRAP_ADMIN_PASSWORD_FILE: ${err.message}`);
   }

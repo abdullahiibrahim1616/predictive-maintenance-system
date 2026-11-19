@@ -25,8 +25,8 @@ async function triggerTestNotification(req, res) {
             });
         } else if (channel === 'EMAIL') {
             result = await notificationService.sendEmailAlert({
-                to: contact || 'maint.mgr@seplatenergy.com',
-                name: recipient_name || 'Dr. Fatima Aliyu',
+                to: contact || (process.env.DEMO_MAINTENANCE_EMAIL || 'maint.mgr@localhost.test'),
+                name: recipient_name || 'Maintenance Manager',
                 tag: equipment_tag || 'COMP-GT-01',
                 facility: 'Oben Gas Processing Plant',
                 failureMode: 'Turbine Blade Fatigue & Dynamic Unbalance',

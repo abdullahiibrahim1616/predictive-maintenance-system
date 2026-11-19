@@ -1,9 +1,13 @@
 const fs = require('fs');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 
 if (process.env.JWT_SECRET_FILE) {
+  const secretPath = path.isAbsolute(process.env.JWT_SECRET_FILE)
+    ? process.env.JWT_SECRET_FILE
+    : path.resolve(__dirname, '../../../', process.env.JWT_SECRET_FILE);
   try {
-    process.env.JWT_SECRET = fs.readFileSync(process.env.JWT_SECRET_FILE, 'utf8').trim();
+    process.env.JWT_SECRET = fs.readFileSync(secretPath, 'utf8').trim();
   } catch (err) {
     throw new Error(`Could not read JWT_SECRET_FILE: ${err.message}`);
   }

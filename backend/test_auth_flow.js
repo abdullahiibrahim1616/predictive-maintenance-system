@@ -30,6 +30,9 @@ async function runTests() {
     const app = require('./src/server');
     const initDatabase = require('./src/database/dbInit');
 
+    const adminEmail = (process.env.BOOTSTRAP_ADMIN_EMAIL || process.env.DEMO_ADMIN_EMAIL || 'admin@localhost.test').trim().toLowerCase();
+    const demoPassword = (process.env.DEMO_PASSWORD || 'ChangeMe!2026').trim();
+
     await initDatabase();
 
     const server = app.listen(5099, async () => {
@@ -58,14 +61,14 @@ async function runTests() {
             const badLogin = await makeRequest({
                 hostname: 'localhost', port: 5099, path: '/api/v1/auth/login', method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
-            }, { email: 'admin@seplatenergy.com', password: 'incorrect_password_xyz' });
+            }, { email: adminEmail, password: 'incorrect_password_xyz' });
             assert(badLogin.status === 401 && badLogin.body.success === false, 'Invalid credentials return HTTP 401 Unauthorized');
 
             // TEST 3: Legitimate Login & Token Issuance
             const goodLogin = await makeRequest({
                 hostname: 'localhost', port: 5099, path: '/api/v1/auth/login', method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
-            }, { email: 'admin@seplatenergy.com', password: 'password123' });
+            }, { email: adminEmail, password: demoPassword });
             assert(goodLogin.status === 200 && goodLogin.body.success === true, 'Valid login returns HTTP 200 OK');
             assert(!!goodLogin.body.token && !!goodLogin.body.refreshToken, 'Login response contains both token and refreshToken');
 
@@ -77,7 +80,7 @@ async function runTests() {
                 hostname: 'localhost', port: 5099, path: '/api/v1/auth/me', method: 'GET',
                 headers: { 'Authorization': `Bearer ${authToken}` }
             });
-            assert(meRes.status === 200 && meRes.body.user.email === 'admin@seplatenergy.com', '/auth/me restores valid user profile');
+            assert(meRes.status === 200 && meRes.body.user.email === adminEmail, '/auth/me restores valid user profile');
 
             // TEST 5: Rejected access without token
             const unauthRes = await makeRequest({
@@ -103,7 +106,7 @@ async function runTests() {
             const weakChange = await makeRequest({
                 hostname: 'localhost', port: 5099, path: '/api/v1/auth/change-password', method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` }
-            }, { currentPassword: 'password123', newPassword: 'weak' });
+            }, { currentPassword: demoPassword, newPassword: 'weak' });
             assert(weakChange.status === 400 && weakChange.body.error.includes('8 characters'), 'Weak password rejected with 400 Bad Request');
 
             // TEST 8: Change Password with Incorrect Current Password

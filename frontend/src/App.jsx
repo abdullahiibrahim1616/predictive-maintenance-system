@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Database } from 'lucide-react';
+import { DEMO_ACCOUNTS, getDemoAccount, DEMO_PASSWORD } from './config/demoAccounts';
 import Navbar from './components/Navbar';
+
+const DEMO_CONTACTS = {
+  admin: DEMO_ACCOUNTS[0].email,
+  maintenance: DEMO_ACCOUNTS[1].email,
+  operations: DEMO_ACCOUNTS[2].email,
+  technician: DEMO_ACCOUNTS[3].email
+};
 import LoginScreen from './components/LoginScreen';
 import SuperAdminView from './components/SuperAdminView';
 import MaintenanceManagerView from './components/MaintenanceManagerView';
@@ -57,8 +65,8 @@ export default function App() {
   ]);
 
   const [auditLogs, setAuditLogs] = useState([
-    { id: 'aud-101', user_email: 'admin@seplatenergy.com', user_role: 'SUPER_ADMIN', action: 'KMS_KEY_ROTATION', target_entity: 'AWS_KMS_KEYS', ip_address: '197.210.64.12', timestamp: '2026-07-22 21:15:00' },
-    { id: 'aud-102', user_email: 'maint.mgr@seplatenergy.com', user_role: 'MAINTENANCE_MANAGER', action: 'CREATE_WORK_ORDER', target_entity: 'work_orders', ip_address: '197.210.64.44', timestamp: '2026-07-22 22:04:12' }
+    { id: 'aud-101', user_email: DEMO_CONTACTS.admin, user_role: 'SUPER_ADMIN', action: 'KMS_KEY_ROTATION', target_entity: 'AWS_KMS_KEYS', ip_address: '197.210.64.12', timestamp: '2026-07-22 21:15:00' },
+    { id: 'aud-102', user_email: DEMO_CONTACTS.maintenance, user_role: 'MAINTENANCE_MANAGER', action: 'CREATE_WORK_ORDER', target_entity: 'work_orders', ip_address: '197.210.64.44', timestamp: '2026-07-22 22:04:12' }
   ]);
 
   const [analyticsData, setAnalyticsData] = useState({
@@ -231,20 +239,23 @@ export default function App() {
 
   // Demo Role Switching Handler (Super Admin only, strictly via server authentication)
   const handleSelectRole = async (role) => {
-    const roleProfiles = {
-      SUPER_ADMIN: { email: 'admin@seplatenergy.com', password: 'password123' },
-      MAINTENANCE_MANAGER: { email: 'maint.mgr@seplatenergy.com', password: 'password123' },
-      OPERATIONS_MANAGER: { email: 'ops.mgr@seplatenergy.com', password: 'password123' },
-      TECHNICIAN: { email: 'tech.field@seplatenergy.com', password: 'password123' }
-    };
-    const target = roleProfiles[role];
+    const target = getDemoAccount(role);
     if (!target) return;
+
+    const roleProfiles = {
+      SUPER_ADMIN: { email: target.email, password: DEMO_PASSWORD },
+      MAINTENANCE_MANAGER: { email: target.email, password: DEMO_PASSWORD },
+      OPERATIONS_MANAGER: { email: target.email, password: DEMO_PASSWORD },
+      TECHNICIAN: { email: target.email, password: DEMO_PASSWORD }
+    };
+    const selectedRole = roleProfiles[role];
+    if (!selectedRole) return;
 
     try {
       const res = await fetch('/api/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: target.email, password: target.password })
+        body: JSON.stringify({ email: selectedRole.email, password: selectedRole.password })
       });
       const data = await res.json();
       if (res.ok && data.success && data.token) {
@@ -515,10 +526,10 @@ export default function App() {
             <SuperAdminView
               auditLogs={auditLogs}
               usersList={[
-                { id: 'usr-admin', full_name: 'Engr. Chukwuemeka Obi', email: 'admin@seplatenergy.com', role: 'SUPER_ADMIN', facility_name: 'Ovhor Processing Facility' },
-                { id: 'usr-maint', full_name: 'Dr. Fatima Aliyu', email: 'maint.mgr@seplatenergy.com', role: 'MAINTENANCE_MANAGER', facility_name: 'Oben Gas Processing Plant' },
-                { id: 'usr-ops', full_name: 'Chief Dayo Adeyemi', email: 'ops.mgr@seplatenergy.com', role: 'OPERATIONS_MANAGER', facility_name: 'Ovhor Processing Facility' },
-                { id: 'usr-tech', full_name: 'Emeka Okafor (Field Tech)', email: 'tech.field@seplatenergy.com', role: 'TECHNICIAN', facility_name: 'Oben Gas Processing Plant' }
+                { id: 'usr-admin', full_name: 'System Administrator', email: DEMO_CONTACTS.admin, role: 'SUPER_ADMIN', facility_name: 'Ovhor Processing Facility' },
+                { id: 'usr-maint', full_name: 'Maintenance Manager', email: DEMO_CONTACTS.maintenance, role: 'MAINTENANCE_MANAGER', facility_name: 'Oben Gas Processing Plant' },
+                { id: 'usr-ops', full_name: 'Operations Manager', email: DEMO_CONTACTS.operations, role: 'OPERATIONS_MANAGER', facility_name: 'Ovhor Processing Facility' },
+                { id: 'usr-tech', full_name: 'Field Technician', email: DEMO_CONTACTS.technician, role: 'TECHNICIAN', facility_name: 'Oben Gas Processing Plant' }
               ]}
               onRefreshData={() => {}}
             />

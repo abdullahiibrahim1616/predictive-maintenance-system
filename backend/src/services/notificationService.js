@@ -67,7 +67,7 @@ async function sendEmailAlert({ to, name, tag, facility, failureMode, healthInde
     const id = `email-${randomUUID()}`;
     const subject = `⚠️ SEPLAT PREDICTIVE ALERT: ${tag} (${facility}) Health Index Critical (${healthIndex}%)`;
     const message_body = `Dear ${name},\n\nAutomated sensor telemetry at ${facility} has detected a critical anomaly on Asset Tag: ${tag}.\n\n- Current Health Index: ${healthIndex}%\n- Predicted Failure Mode: ${failureMode}\n- Action Required: Immediate Inspection\n- Work Order Reference: ${workOrderId || 'N/A'}\n\nPlease access the Seplat Energy Predictive Maintenance Portal to track repair progress.\n\nRegards,\nSeplat Energy Asset Integrity Systems`;
-    const contact = to || 'maint.mgr@seplatenergy.com';
+    const contact = to || (process.env.DEMO_MAINTENANCE_EMAIL || 'maint.mgr@localhost.test');
 
     try {
         const delivery = await awsIntegrations.publishAlertTopic({ subject, message: message_body });

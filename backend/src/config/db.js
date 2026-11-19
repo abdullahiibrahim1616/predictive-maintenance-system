@@ -62,8 +62,9 @@ if (DB_TYPE === 'sqlite') {
     const readSecret = (fileEnv, valueEnv) => {
         const secretFile = process.env[fileEnv];
         if (secretFile) {
+            const secretFilePath = path.isAbsolute(secretFile) ? secretFile : path.resolve(__dirname, '../../../', secretFile);
             try {
-                return fs.readFileSync(secretFile, 'utf8').trim();
+                return fs.readFileSync(secretFilePath, 'utf8').trim();
             } catch (err) {
                 throw new Error(`❌ [Database] Could not read secret file configured by ${fileEnv}: ${err.message}`);
             }

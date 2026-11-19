@@ -6,10 +6,16 @@ const dotenv = require('dotenv');
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
+const resolveEnvFilePath = (filePath) => {
+    if (!filePath) return filePath;
+    return path.isAbsolute(filePath) ? filePath : path.resolve(__dirname, '../../../', filePath);
+};
+
 let JWT_SECRET = process.env.JWT_SECRET;
 if (process.env.JWT_SECRET_FILE) {
+    const secretFilePath = resolveEnvFilePath(process.env.JWT_SECRET_FILE);
     try {
-        JWT_SECRET = fs.readFileSync(process.env.JWT_SECRET_FILE, 'utf8').trim();
+        JWT_SECRET = fs.readFileSync(secretFilePath, 'utf8').trim();
     } catch (err) {
         console.error(`❌ FATAL: Could not read JWT_SECRET_FILE: ${err.message}`);
         process.exit(1);

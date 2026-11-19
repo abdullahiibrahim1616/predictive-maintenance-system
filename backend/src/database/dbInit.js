@@ -1,6 +1,7 @@
 const { run, get, query } = require('../config/db');
 const bcrypt = require('bcryptjs');
 const fs = require('fs');
+const path = require('path');
 const { runMigrations } = require('./migrator');
 
 async function initDatabase() {
@@ -221,10 +222,43 @@ async function initDatabase() {
         }
     }
 
+    const facilities = [
+        { id: 'fac-1', name: 'Ovhor Processing Facility (OML 38)', region: 'Delta State Onshore', facility_type: 'Crude Processing Station' },
+        { id: 'fac-2', name: 'Oben Gas Processing Plant (OML 4)', region: 'Edo/Delta Border', facility_type: 'Gas Compressor & Processing Plant' },
+        { id: 'fac-3', name: 'Amukpe Crude Terminal (OML 41)', region: 'Delta State Onshore', facility_type: 'Crude Storage & Export Facility' }
+    ];
+
+    for (const f of facilities) {
+        await run(`INSERT INTO facilities (id, name, region, facility_type) VALUES (?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`, 
+            [f.id, f.name, f.region, f.facility_type]);
+    }
+
     // 2. Check if seed data exists
     const userCount = await get(`SELECT COUNT(*) as count FROM users`);
     if (userCount && userCount.count > 0) {
-        console.log('✅ Database already populated with seed data.');
+        const demoPassword = (process.env.DEMO_PASSWORD || 'ChangeMe!2026').trim();
+        const demoUsers = [
+            { id: 'usr-admin', name: 'System Administrator', email: (process.env.DEMO_ADMIN_EMAIL || process.env.BOOTSTRAP_ADMIN_EMAIL || 'admin@localhost.test').trim().toLowerCase(), role: 'SUPER_ADMIN', facId: 'fac-1' },
+            { id: 'usr-maint', name: 'Maintenance Manager', email: (process.env.DEMO_MAINTENANCE_EMAIL || 'maint.mgr@localhost.test').trim().toLowerCase(), role: 'MAINTENANCE_MANAGER', facId: 'fac-2' },
+            { id: 'usr-ops', name: 'Operations Manager', email: (process.env.DEMO_OPERATIONS_EMAIL || 'ops.mgr@localhost.test').trim().toLowerCase(), role: 'OPERATIONS_MANAGER', facId: 'fac-1' },
+            { id: 'usr-tech', name: 'Field Technician', email: (process.env.DEMO_TECHNICIAN_EMAIL || 'tech.field@localhost.test').trim().toLowerCase(), role: 'TECHNICIAN', facId: 'fac-2' }
+        ];
+
+        for (const u of demoUsers) {
+            const passwordHash = await bcrypt.hash(demoPassword, 10);
+            await run(`
+                INSERT INTO users (id, full_name, email, password_hash, role, facility_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT (email) DO UPDATE SET
+                    full_name = excluded.full_name,
+                    email = excluded.email,
+                    password_hash = excluded.password_hash,
+                    role = excluded.role,
+                    facility_id = excluded.facility_id
+            `, [u.id, u.name, u.email, passwordHash, u.role, u.facId]);
+        }
+
+        console.log('✅ Database already populated. Demo credentials synchronized to the current environment configuration.');
         return;
     }
 
@@ -239,8 +273,9 @@ async function initDatabase() {
         }
 
         let adminPassword;
+        const adminPasswordPath = path.isAbsolute(adminPasswordFile) ? adminPasswordFile : path.resolve(__dirname, '../../../', adminPasswordFile);
         try {
-            adminPassword = fs.readFileSync(adminPasswordFile, 'utf8').trim();
+            adminPassword = fs.readFileSync(adminPasswordPath, 'utf8').trim();
         } catch (err) {
             throw new Error(`Could not read BOOTSTRAP_ADMIN_PASSWORD_FILE: ${err.message}`);
         }
@@ -254,7 +289,11 @@ async function initDatabase() {
             [facilityId, process.env.BOOTSTRAP_ADMIN_FACILITY_NAME || 'Primary Facility', 'Unassigned', 'Operations Facility']
         );
         await run(
-            `INSERT INTO users (id, full_name, email, password_hash, role, facility_id) VALUES (?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO users (id, full_name, email, password_hash, role, facility_id) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (email) DO UPDATE SET
+                full_name = excluded.full_name,
+                password_hash = excluded.password_hash,
+                role = excluded.role,
+                facility_id = excluded.facility_id`,
             [
                 'usr-bootstrap-admin',
                 process.env.BOOTSTRAP_ADMIN_NAME || 'System Administrator',
@@ -270,31 +309,27 @@ async function initDatabase() {
 
     console.log('🌱 Seeding Database with Seplat Energy Plc Assets & Demo Accounts...');
 
-    // Facilities (Seplat Energy OML Assets)
-    const facilities = [
-        { id: 'fac-1', name: 'Ovhor Processing Facility (OML 38)', region: 'Delta State Onshore', facility_type: 'Crude Processing Station' },
-        { id: 'fac-2', name: 'Oben Gas Processing Plant (OML 4)', region: 'Edo/Delta Border', facility_type: 'Gas Compressor & Processing Plant' },
-        { id: 'fac-3', name: 'Amukpe Crude Terminal (OML 41)', region: 'Delta State Onshore', facility_type: 'Crude Storage & Export Facility' }
-    ];
-
-    for (const f of facilities) {
-        await run(`INSERT INTO facilities (id, name, region, facility_type) VALUES (?, ?, ?, ?)`, 
-            [f.id, f.name, f.region, f.facility_type]);
-    }
-
-    // Password hash for 'password123'
-    const passwordHash = await bcrypt.hash('password123', 10);
+    const demoPassword = (process.env.DEMO_PASSWORD || 'ChangeMe!2026').trim();
+    const demoAdminEmail = (process.env.DEMO_ADMIN_EMAIL || process.env.BOOTSTRAP_ADMIN_EMAIL || 'admin@localhost.test').trim().toLowerCase();
+    const demoMaintenanceEmail = (process.env.DEMO_MAINTENANCE_EMAIL || 'maint.mgr@localhost.test').trim().toLowerCase();
+    const demoOperationsEmail = (process.env.DEMO_OPERATIONS_EMAIL || 'ops.mgr@localhost.test').trim().toLowerCase();
+    const demoTechnicianEmail = (process.env.DEMO_TECHNICIAN_EMAIL || 'tech.field@localhost.test').trim().toLowerCase();
+    const passwordHash = await bcrypt.hash(demoPassword, 10);
 
     // Users (4 Roles)
     const users = [
-        { id: 'usr-admin', name: 'Engr. Chukwuemeka Obi', email: 'admin@seplatenergy.com', role: 'SUPER_ADMIN', facId: 'fac-1' },
-        { id: 'usr-maint', name: 'Dr. Fatima Aliyu', email: 'maint.mgr@seplatenergy.com', role: 'MAINTENANCE_MANAGER', facId: 'fac-2' },
-        { id: 'usr-ops', name: 'Chief Dayo Adeyemi', email: 'ops.mgr@seplatenergy.com', role: 'OPERATIONS_MANAGER', facId: 'fac-1' },
-        { id: 'usr-tech', name: 'Emeka Okafor (Field Tech)', email: 'tech.field@seplatenergy.com', role: 'TECHNICIAN', facId: 'fac-2' }
+        { id: 'usr-admin', name: 'System Administrator', email: demoAdminEmail, role: 'SUPER_ADMIN', facId: 'fac-1' },
+        { id: 'usr-maint', name: 'Maintenance Manager', email: demoMaintenanceEmail, role: 'MAINTENANCE_MANAGER', facId: 'fac-2' },
+        { id: 'usr-ops', name: 'Operations Manager', email: demoOperationsEmail, role: 'OPERATIONS_MANAGER', facId: 'fac-1' },
+        { id: 'usr-tech', name: 'Field Technician', email: demoTechnicianEmail, role: 'TECHNICIAN', facId: 'fac-2' }
     ];
 
     for (const u of users) {
-        await run(`INSERT INTO users (id, full_name, email, password_hash, role, facility_id) VALUES (?, ?, ?, ?, ?, ?)`,
+        await run(`INSERT INTO users (id, full_name, email, password_hash, role, facility_id) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (email) DO UPDATE SET
+                full_name = excluded.full_name,
+                password_hash = excluded.password_hash,
+                role = excluded.role,
+                facility_id = excluded.facility_id`,
             [u.id, u.name, u.email, passwordHash, u.role, u.facId]);
     }
 
@@ -308,7 +343,7 @@ async function initDatabase() {
     ];
 
     for (const eq of equipmentList) {
-        await run(`INSERT INTO equipment (id, facility_id, tag_name, equipment_type, serial_number, criticality_rating, status, health_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        await run(`INSERT INTO equipment (id, facility_id, tag_name, equipment_type, serial_number, criticality_rating, status, health_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
             [eq.id, eq.facId, eq.tag, eq.type, eq.serial, eq.crit, eq.status, eq.health]);
     }
 
@@ -322,7 +357,7 @@ async function initDatabase() {
     ];
 
     for (const l of initialLogs) {
-        await run(`INSERT INTO telemetry_logs (id, equipment_id, vibration_rms_mms, temperature_c, pressure_psi, flow_rate_bpd, health_index, anomaly_flag, failure_prediction) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        await run(`INSERT INTO telemetry_logs (id, equipment_id, vibration_rms_mms, temperature_c, pressure_psi, flow_rate_bpd, health_index, anomaly_flag, failure_prediction) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
             [l.id, l.eqId, l.vib, l.temp, l.press, l.flow, l.health, l.anomaly, l.pred]);
     }
 
@@ -353,7 +388,7 @@ async function initDatabase() {
     ];
 
     for (const wo of workOrders) {
-        await run(`INSERT INTO work_orders (id, equipment_id, assigned_to_user_id, title, description, priority, status, predicted_failure_mode, estimated_rul_hours) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        await run(`INSERT INTO work_orders (id, equipment_id, assigned_to_user_id, title, description, priority, status, predicted_failure_mode, estimated_rul_hours) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
             [wo.id, wo.eqId, wo.userId, wo.title, wo.desc, wo.priority, wo.status, wo.failureMode, wo.rul]);
     }
 
@@ -378,13 +413,13 @@ async function initDatabase() {
     ];
 
     for (const cr of costReports) {
-        await run(`INSERT INTO cost_avoidance_reports (id, work_order_id, estimated_downtime_hours_avoided, production_loss_rate_usd_per_hr, estimated_repair_cost_usd, net_savings_usd) VALUES (?, ?, ?, ?, ?, ?)`,
+        await run(`INSERT INTO cost_avoidance_reports (id, work_order_id, estimated_downtime_hours_avoided, production_loss_rate_usd_per_hr, estimated_repair_cost_usd, net_savings_usd) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
             [cr.id, cr.woId, cr.hoursAvoided, cr.lossRate, cr.repairCost, cr.netSavings]);
     }
 
     // Audit Log Entry
-    await run(`INSERT INTO audit_logs (id, user_id, user_email, user_role, action, target_entity, ip_address, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        ['aud-1', 'usr-admin', 'admin@seplatenergy.com', 'SUPER_ADMIN', 'SYSTEM_INITIALIZATION', 'DATABASE_SEED', '127.0.0.1', JSON.stringify({ note: 'Initial seed of Seplat Energy Plc assets and facilities' })]);
+    await run(`INSERT INTO audit_logs (id, user_id, user_email, user_role, action, target_entity, ip_address, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
+        ['aud-1', 'usr-admin', demoAdminEmail, 'SUPER_ADMIN', 'SYSTEM_INITIALIZATION', 'DATABASE_SEED', '127.0.0.1', JSON.stringify({ note: 'Initial seed of system assets and facilities' })]);
 
     console.log('✅ Database initialization and seeding complete.');
 }

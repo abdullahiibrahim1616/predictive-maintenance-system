@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Shield, Zap, Lock, Eye, EyeOff, ChevronRight, Radio } from 'lucide-react';
-
-const DEMO_ACCOUNTS = [
-  { role: 'SUPER_ADMIN', email: 'admin@seplatenergy.com', label: 'Super Admin', color: '#f43f5e', desc: 'Engr. Chukwuemeka Obi' },
-  { role: 'MAINTENANCE_MANAGER', email: 'maint.mgr@seplatenergy.com', label: 'Maintenance Mgr', color: '#f59e0b', desc: 'Dr. Fatima Aliyu' },
-  { role: 'OPERATIONS_MANAGER', email: 'ops.mgr@seplatenergy.com', label: 'Operations Mgr', color: '#10b981', desc: 'Chief Dayo Adeyemi' },
-  { role: 'TECHNICIAN', email: 'tech.field@seplatenergy.com', label: 'Field Technician', color: '#06b6d4', desc: 'Emeka Okafor' }
-];
+import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '../config/demoAccounts';
 
 // Animated live telemetry ticker data — Seplat Energy assets
 const LIVE_FEEDS = [
@@ -18,8 +12,8 @@ const LIVE_FEEDS = [
 ];
 
 export default function LoginScreen({ onLogin }) {
-  const [email, setEmail] = useState('admin@seplatenergy.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState(DEMO_ACCOUNTS[0].email);
+  const [password, setPassword] = useState(DEMO_PASSWORD);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
@@ -86,9 +80,9 @@ export default function LoginScreen({ onLogin }) {
 
   const handleQuickLogin = (account) => {
     setEmail(account.email);
-    setPassword('password123');
+    setPassword(DEMO_PASSWORD);
     setSelectedRole(account.role);
-    performLogin(account.email, 'password123');
+    performLogin(account.email, DEMO_PASSWORD);
   };
 
   const handleSubmit = async (e) => {
@@ -377,7 +371,7 @@ export default function LoginScreen({ onLogin }) {
           </div>
 
           <p style={{ fontSize: '0.72rem', color: '#6b7280', textAlign: 'center', marginTop: '12px' }}>
-            Click any demo account to pre-fill credentials. Password: <code style={{ color: '#9ca3af' }}>password123</code>
+            Click any demo account to pre-fill credentials. Password: <code style={{ color: '#9ca3af' }}>{DEMO_PASSWORD}</code>
           </p>
         </div>
 

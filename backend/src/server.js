@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const initDatabase = require('./database/dbInit');
 
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config();
 
 const app = express();
